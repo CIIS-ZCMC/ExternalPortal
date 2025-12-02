@@ -107,14 +107,16 @@ class DTRView extends TableWidget
                     ->label('Print DTR')
                     ->hidden(fn() => $this->getTableQuery()->count() == 0)
                     ->icon(Heroicon::Printer)
-                    ->url(
-                        fn() => "http://192.168.8.95:8000/generateDtr?biometric_id=[" .
-                            Auth::user()->biometric_id .
+                    ->action(function () {
+                        $url = "https://umis.zcmc.online/generateDtr?" .
+                            "biometric_id=[" . Auth::user()->biometric_id .
                             "]&monthof=" . $this->month .
                             "&yearof=" . $this->year .
-                            "&view=2&frontview=0&whole_month=1"
-                    )
-                    ->openUrlInNewTab()
+                            "&view=2&frontview=0&whole_month=1";
+
+                        // Trigger download in the browser
+                        $this->dispatch('open-new-tab', ['url' => $url]);
+                    })
 
             ])
             ->recordActions([])
