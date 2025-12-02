@@ -69,7 +69,7 @@
                     <input type="text" class="form-control" name="ext_name" value="{{ old('ext_name') }}">
                 </div>
             </div>
-
+            <input type="hidden" name="email_address" value="{{ $email }}">
             <!-- Contact Info -->
             <div class="mb-3">
                 <label class="form-label">Email Address</label>

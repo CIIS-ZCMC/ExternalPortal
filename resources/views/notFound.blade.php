@@ -232,7 +232,7 @@
 
                 </div>
                 <div class="actions">
-                    <button onclick="window.location.href='portal/register?email={{ $email }}'"
+                    <button onclick="window.location.href='portal/register?email_address={{ $email }}'"
                         class="btn btn-primary" id="btn-register" type="button">Register with this Google
                         account</button>
                     <button class="btn btn-outline" id="btn-retry" type="button">Try signing in again</button>

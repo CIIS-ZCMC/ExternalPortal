@@ -21,8 +21,8 @@ class AuthController extends Controller
     public function registerPage()
     {
         $email = "";
-        if (request()->has("email")) {
-            $email = request()->email;
+        if (request()->has("email_address")) {
+            $email = request()->email_address;
         }
         return view("Register", ["email" => $email]);
     }
@@ -96,12 +96,12 @@ class AuthController extends Controller
 
         session()->put("user", $request->all());
 
-        if ($request->has("email")) {
+        if ($request->has("email_address") && !empty($request->get("email_address"))) {
 
             $nextBiometric = $this->SaveUser($request->all());
-
             return redirect()->route("portal.successful", ["biometric_id" => $nextBiometric]);
         }
+
         return redirect()->route("portal.sendConfirmation");
     }
 
