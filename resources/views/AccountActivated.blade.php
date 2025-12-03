@@ -96,7 +96,7 @@
             You now have access to your DTR.</p>
 
         <p style="margin-top: 6px; color:#374151;">
-            Kindly proceed to the <strong>Human Resource Office ( HR )</strong> or Innovations and Information Systems Unit
+            Kindly proceed to Innovations and Information Systems Unit
             <strong> ( IISU )</strong>
             to complete your <strong>Biometric Registration</strong>.
         </p>

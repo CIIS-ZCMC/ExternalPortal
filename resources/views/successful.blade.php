@@ -91,7 +91,7 @@
 
 
         <p style="margin-top: 6px; color:#374151;">
-            Kindly proceed to the <strong>Human Resource Office ( HR )</strong> or Innovation and Information System Unit
+            Kindly proceed to Innovation and Information System Unit
             <strong> ( IISU )</strong>
             to complete your <strong>Biometric Registration</strong>.
         </p>
