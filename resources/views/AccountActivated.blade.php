@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="https://portal.zcmc.online/assets/zcmc-DW37XhWu.png" type="image/x-icon">
     <title>Account Activated</title>
 
     <!-- Auto-redirect (change URL if needed) -->
@@ -95,13 +96,13 @@
             You now have access to your DTR.</p>
 
         <p style="margin-top: 6px; color:#374151;">
-            Kindly proceed to the <strong>Human Resource Office ( HR )</strong> or Innovation and Innovation System Unit
+            Kindly proceed to the <strong>Human Resource Office ( HR )</strong> or Innovation and Information System Unit
             <strong> ( IISU )</strong>
             to complete your <strong>Biometric Registration</strong>.
         </p>
 
         <p style="margin-top: 6px; color:#374151;">
-            Plaese provide them this ID for their convenience : <br><strong
+            Please provide them this ID for their convenience : <br><strong
                 style="color: #2563eb;font-size:20px">{{ $biometric_id }}</strong>
         </p>
 

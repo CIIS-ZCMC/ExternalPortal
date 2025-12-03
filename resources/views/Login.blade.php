@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZCMC External Portal Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="shortcut icon" href="https://portal.zcmc.online/assets/zcmc-DW37XhWu.png" type="image/x-icon">
 
     <style>
         * {
@@ -195,7 +196,7 @@
             @csrf
             <div class="form-group">
                 <label for="empid">Username</label>
-                <input name="username" required type="text" id="empid" placeholder="Enter Employee ID">
+                <input name="username" required type="text" id="empid" placeholder="Enter Username">
             </div>
 
             <div class="form-group">

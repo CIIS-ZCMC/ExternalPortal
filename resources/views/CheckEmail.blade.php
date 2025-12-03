@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <link rel="shortcut icon" href="https://portal.zcmc.online/assets/zcmc-DW37XhWu.png" type="image/x-icon">
     <title>Check your email</title>
     <style>
         /* Mobile friendly styles */
@@ -109,8 +110,7 @@
                                     <a class="btn" href="https://mail.google.com/mail/u/0/#inbox" rel="noopener">Open
                                         my
                                         email</a>
-                                    <br><br>
-                                    <a href="portal/login" target="_blank" rel="noopener">Proceed to Login</a>
+                                 
                                 </p>
 
 

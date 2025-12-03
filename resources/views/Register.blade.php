@@ -7,6 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>ZCMC External Portal - Register</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="shortcut icon" href="https://portal.zcmc.online/assets/zcmc-DW37XhWu.png" type="image/x-icon">
     <style>
         body {
             background: linear-gradient(135deg, #1064a3, #1cb572);
@@ -69,7 +70,7 @@
                     <input type="text" class="form-control" name="ext_name" value="{{ old('ext_name') }}">
                 </div>
             </div>
-            <input type="hidden" name="email_address" value="{{ $email }}">
+              <input type="hidden" name="email_address" value="{{ $email}}">
             <!-- Contact Info -->
             <div class="mb-3">
                 <label class="form-label">Email Address</label>
