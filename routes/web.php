@@ -27,6 +27,9 @@ Route::get("/AccountActivated", [AuthController::class, 'AccountActivated'])->na
 
 Route::get('/successful', [AuthController::class, 'successful'])->name('portal.successful');
 
+Route::get("/admin/login", [AuthController::class, 'adminLogin'])->name('admin.login');
+Route::post("/admin/signin", [AuthController::class, 'AdminSignin'])->name('admin.signin');
+
 Route::controller(GoogleController::class)->group(function () {
     Route::get("/auth/google", "redirectToGoogle")->name("auth.google");
     Route::get("/auth/google/callback", "handleGoogleCallback")->name("auth.google.callback");

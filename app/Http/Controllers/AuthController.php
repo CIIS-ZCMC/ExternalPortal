@@ -9,13 +9,48 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    public function ValidateLogin($redirect)
+    {
+        $adminAccounts = json_decode(file_get_contents(base_path("Admin_Accounts.json")));
 
+        if (!session()->has("admin_user")) {
+            if (request()->has("employeeId")) {
+
+                if (in_array(request("employeeId"), $adminAccounts->admin_accounts)) {
+                    session()->put("admin_user", true);
+                    session()->forget("error");
+                    return true;
+                }
+                session()->put("error", "Access Denied");
+                return false;
+            }
+        }
+    }
     public function loginPage()
     {
         if (Auth::guard("external")->check()) {
             return redirect("/portal");
         }
         return view("Login");
+    }
+
+    public function adminLogin()
+    {
+        if (session()->has("admin_user")) {
+            return redirect("/admin/users-lists");
+        }
+        return view("AdminLogin");
+    }
+
+    public function AdminSignin(Request $request)
+    {
+        $validate = $this->ValidateLogin("admin.login");
+
+        if ($validate) {
+            session()->put("admin_user", true);
+            return redirect('admin/users-lists');
+        }
+        return redirect()->route("admin.login")->with("error", "Invalid Employee ID");
     }
 
     public function registerPage()
