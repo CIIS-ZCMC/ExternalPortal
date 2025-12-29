@@ -93,7 +93,7 @@
                 <div class="col-md-12 mb-2 col-lg-6">
                     <label class="form-label">Agency</label>
                     <label class="form-label">Government Agency</label>
-                    <select class="form-select" name="agency" required value="{{ old('agency') }}">
+                    <select class="form-select" name="agency" id="select_agency" required value="{{ old('agency') }}">
                         <option value="" selected disabled>-- Select Government Agency --</option>
 
                         <!-- National Government Agencies -->
@@ -159,6 +159,11 @@
                         <option value="Other Government Agency">Other Government Agency</option>
                     </select>
 
+                    <div id="input_agency" class="d-none">
+                    <label class="form-label">Others, Please specify:</label>
+                        <input type="text"  class="form-control" name="agency" id="input_agency_input" value="{{ old('agency') }}">
+                    </div>
+                    
                 </div>
 
                 <div class="col-md-12 col-lg-6">
@@ -208,6 +213,28 @@
             wrapper.classList.add("submitting");
             button.disabled = true;
         });
+
+
+        document.getElementById("select_agency").addEventListener("change",(event)=>{
+            const select = event.target;
+            const container = document.getElementById("input_agency");
+            const input = document.getElementById("input_agency_input");
+            
+           if(event.target.value == "Other Government Agency"){
+          
+            container.classList.remove("d-none");
+            
+            input.required = true;        
+            input.focus();
+           
+           }else {
+            input.required = false;   
+            container.classList.add("d-none");
+            input.value=""
+            input.removeAttribute("name")
+            select.value = event.target.value
+           }
+        })
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
