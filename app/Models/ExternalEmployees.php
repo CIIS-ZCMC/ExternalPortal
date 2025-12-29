@@ -4,11 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 class ExternalEmployees extends Authenticatable
 {
-    protected $table = "external_employees";
 
+    use HasFactory, SoftDeletes;
+    protected $table = "external_employees";
+     
     protected $fillable = [
         'username',
         'password',
