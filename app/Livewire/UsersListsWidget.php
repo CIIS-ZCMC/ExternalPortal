@@ -3,8 +3,12 @@
 namespace App\Livewire;
 
 use App\Models\ExternalEmployees;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
 use Illuminate\Contracts\Support\Htmlable;
@@ -40,12 +44,22 @@ class UsersListsWidget extends TableWidget
                     ->searchable()
                     ->sortable()
                     ->badge()
+                
                     ->size("10px")
                     ->color(function ($record) {
+                        if($record->deleted_at){
+                            return "danger";
+                        }
+
                         $dtr = DTR::where("biometric_id", $record->biometric_id)->first();
                         return $dtr ? "success" : "danger";
                     })
                     ->state(function ($record) {
+
+                        if($record->deleted_at){
+                            return "INACTIVE";
+                        }
+
                         $dtr = DTR::where("biometric_id", $record->biometric_id)->first();
                         return $dtr ? "ACTIVE" : "INACTIVE";
                     }),
@@ -98,6 +112,14 @@ class UsersListsWidget extends TableWidget
                     ->toggleable(),
             ])
             ->filters([
+
+                TrashedFilter::make()
+                ->label('Employee Status')
+              
+                ->falseLabel('Show DeActivated Only')
+                ->native(false) // Better UI
+              
+                ->placeholder('All Employees'),
 
                 SelectFilter::make('status_filter')
                     ->label('Status')
@@ -170,11 +192,21 @@ class UsersListsWidget extends TableWidget
                 //
             ])
             ->recordActions([
-                //
+                Action::make('deactivate')
+                ->label('Deactivate')
+                ->icon('heroicon-o-user-minus')
+                ->color('warning')
+                ->requiresConfirmation()
+                ->modalHeading('Deactivate Employee')
+                ->modalDescription('Are you sure you want to deactivate this employee? They will no longer be able to log in.')
+                ->action(function ($record) {
+                   $record->delete();
+                })  
+                ->visible(fn ($record) => $record->deleted_at === null)
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    //
+                    
                 ]),
             ]);
     }
