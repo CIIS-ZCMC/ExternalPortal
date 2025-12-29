@@ -79,7 +79,8 @@ class AuthController extends Controller
 
         $startBiometric = 8000;
 
-        $latest = ExternalEmployees::where('biometric_id', '>=', $startBiometric)
+        $latest = ExternalEmployees::withTrashed()
+        ->where('biometric_id', '>=', $startBiometric)
             ->whereNotIn('biometric_id', function ($query) {
                 $query->select('biometric_id')
                     ->from('employee_profiles');
@@ -115,6 +116,7 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
+        
         $request->validate([
             'last_name' => 'required|string|max:255',
             'first_name' => 'required|string|max:255',
