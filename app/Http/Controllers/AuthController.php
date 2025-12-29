@@ -162,6 +162,7 @@ class AuthController extends Controller
 
     public function AccountActivated(Request $request)
     {
+        session()->forget("user");
         return view("AccountActivated", ["biometric_id" => $request->biometric_id]);
     }
 
