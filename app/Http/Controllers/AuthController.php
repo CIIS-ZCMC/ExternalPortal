@@ -147,11 +147,12 @@ class AuthController extends Controller
     public function activate()
     {
 
-        if (!session()->has("user")) {
+      
+        if (!isset(request()->data) && !session()->has("user")) {
             return redirect()->route("portal.expire");
         }
 
-        $user = session()->get("user");
+        $user =session()->has("user") ? session()->get("user") : decrypt(request()->data);
 
         $nextBiometric = $this->SaveUser($user);
 
