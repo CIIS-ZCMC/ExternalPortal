@@ -23,7 +23,7 @@ class MailController extends Controller
             <p>Thank you for registering to the ZCMC External Employee Portal.</p>
             <p>Please click the link below to confirm your registration:</p>
              <br>
-            <a href='" . request()->getSchemeAndHttpHost() . "/activate'>Verify Account</a>
+            <a href='" . request()->getSchemeAndHttpHost() . "/activate?data=".encrypt(session()->get("user"))."'>Verify Account</a>
             ",
         ]);
 
