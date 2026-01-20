@@ -86,29 +86,39 @@
             </svg>
         </div>
 
-        <h1>Registration Successful 🎉</h1>
-        <p>Your account has been created. </p>
+        @isset(request()->is_password_changed)
+            <h1>Changed Saved🎉</h1>
+            <p>Your password has been changed successfully.</p>
+            <div class="redirect">
+                Redirecting to login in <span id="timer">5</span> seconds...
+            </div>
+        @else
+            <h1>Registration Successful 🎉</h1>
+            <p>Your account has been created. </p>
 
 
-        <p style="margin-top: 6px; color:#374151;">
-            Kindly proceed to Innovation and Information System Unit
-            <strong> ( IISU )</strong>
-            to complete your <strong>Biometric Registration</strong>.
-        </p>
+            <p style="margin-top: 6px; color:#374151;">
+                Kindly proceed to Innovation and Information System Unit
+                <strong> ( IISU )</strong>
+                to complete your <strong>Biometric Registration</strong>.
+            </p>
 
-        <p style="margin-top: 6px; color:#374151;">
-            Plaese provide them this ID for their convenience : <br><strong
-                style="color: #2563eb;font-size:20px">{{ $biometric_id }}</strong>
-        </p>
+            <p style="margin-top: 6px; color:#374151;">
+                Plaese provide them this ID for their convenience : <br><strong
+                    style="color: #2563eb;font-size:20px">{{ $biometric_id }}</strong>
+            </p>
+            <a href="portal/login" class="btn">Go to Login Now</a>
+        @endisset
+
         {{-- 
         <div class="redirect">
             Redirecting to login in <span id="timer">5</span> seconds...
         </div> --}}
 
-        <a href="portal/login" class="btn">Go to Login Now</a>
+
     </div>
 
-    {{-- <script>
+    <script>
         let seconds = 5;
         const timerElement = document.getElementById("timer");
 
@@ -121,7 +131,7 @@
                 window.location.href = "portal/login";
             }
         }, 1000);
-    </script> --}}
+    </script>
 </body>
 
 </html>

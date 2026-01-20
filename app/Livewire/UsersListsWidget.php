@@ -15,8 +15,12 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\DTR;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
+use Illuminate\Support\Facades\Hash;
 
 class UsersListsWidget extends TableWidget
 {
@@ -44,10 +48,10 @@ class UsersListsWidget extends TableWidget
                     ->searchable()
                     ->sortable()
                     ->badge()
-                
+
                     ->size("10px")
                     ->color(function ($record) {
-                        if($record->deleted_at){
+                        if ($record->deleted_at) {
                             return "danger";
                         }
 
@@ -56,7 +60,7 @@ class UsersListsWidget extends TableWidget
                     })
                     ->state(function ($record) {
 
-                        if($record->deleted_at){
+                        if ($record->deleted_at) {
                             return "INACTIVE";
                         }
 
@@ -110,16 +114,21 @@ class UsersListsWidget extends TableWidget
                     ->searchable()
                     ->sortable()
                     ->toggleable(),
+                TextColumn::make("username")
+                    ->label("Username")
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable(),
             ])
             ->filters([
 
                 TrashedFilter::make()
-                ->label('Employee Status')
-              
-                ->falseLabel('Show DeActivated Only')
-                ->native(false) // Better UI
-              
-                ->placeholder('All Employees'),
+                    ->label('Employee Status')
+
+                    ->falseLabel('Show DeActivated Only')
+                    ->native(false) // Better UI
+
+                    ->placeholder('All Employees'),
 
                 SelectFilter::make('status_filter')
                     ->label('Status')
@@ -193,21 +202,79 @@ class UsersListsWidget extends TableWidget
             ])
             ->recordActions([
                 Action::make('deactivate')
-                ->label('Deactivate')
-                ->icon('heroicon-o-user-minus')
-                ->color('warning')
-                ->requiresConfirmation()
-                ->modalHeading('Deactivate Employee')
-                ->modalDescription('Are you sure you want to deactivate this employee? They will no longer be able to log in.')
-                ->action(function ($record) {
-                   $record->delete();
-                })  
-                ->visible(fn ($record) => $record->deleted_at === null)
+                    ->label('Deactivate')
+                    ->icon('heroicon-o-user-minus')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Deactivate Employee')
+                    ->modalDescription('Are you sure you want to deactivate this employee? They will no longer be able to log in.')
+                    ->action(function ($record) {
+                        $record->delete();
+                    })
+                    ->visible(fn($record) => $record->deleted_at === null),
+                Action::make('reset_password')
+                    ->label('Reset Password')
+                    ->icon(Heroicon::LockClosed)
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Reset Password')
+                    ->modalDescription('Are you sure you want to reset this employee password? , Please enter the new password')
+                    ->schema([
+
+                        TextInput::make('new_password')
+                            ->password()
+                            ->maxLength(255),
+
+                    ])
+                    ->action(function ($record, $data) {
+
+
+                        $record->update([
+                            'password' => Hash::make($data['new_password']),
+                        ]);
+
+                        Notification::make()
+                            ->title('Password Reset')
+                            ->body('Password has been reset successfully')
+                            ->success()
+                            ->send();
+                    }),
+                Action::make('update_email')
+                    ->label('Update Email')
+                    ->icon(Heroicon::AtSymbol)
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Update Email')
+                    ->modalDescription('Are you sure you want to update this employee email? , Please enter the new email')
+                    ->schema([
+
+                        TextInput::make('email')
+                            ->email()
+                            ->maxLength(255),
+
+                    ])
+                    ->action(function ($record, $data) {
+
+
+                        $record->update([
+                            'email' => $data['email'],
+                        ]);
+
+                        Notification::make()
+                            ->title('Email Updated')
+                            ->body('Email has been updated successfully')
+                            ->success()
+                            ->send();
+                    })
+
             ])
             ->toolbarActions([
-                BulkActionGroup::make([
-                    
-                ]),
+                BulkActionGroup::make([]),
+
+
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([])
             ]);
     }
 }

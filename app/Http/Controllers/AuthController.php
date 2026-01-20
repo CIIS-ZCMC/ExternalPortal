@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\ExternalEmployees;
+use Carbon\Carbon;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
@@ -33,6 +35,45 @@ class AuthController extends Controller
         }
         return view("Login");
     }
+
+    public function forgotPasswordPage()
+    {
+        return view("ForgotPassword");
+    }
+
+    public function resetPasswordPage(Request $request)
+    {
+
+        try {
+            $data = decrypt($request->data);
+
+            if (Carbon::parse($data['timer'])->isPast()) {
+                abort(419);
+            }
+
+
+
+            return view("ResetPassword", ["email" => $data["email"]]);
+        } catch (DecryptException $th) {
+            abort(404);
+        }
+    }
+
+    public function savePassword(Request $request)
+    {
+
+
+        $email = $request->email;
+        $password = $request->password;
+        $user = ExternalEmployees::firstWhere("email", $email);
+
+        $user->update([
+            "password" => Hash::make($password)
+        ]);
+
+        return redirect()->route("portal.successful", ['is_password_changed' => true]);
+    }
+
 
     public function adminLogin()
     {
@@ -80,7 +121,7 @@ class AuthController extends Controller
         $startBiometric = 8000;
 
         $latest = ExternalEmployees::withTrashed()
-        ->where('biometric_id', '>=', $startBiometric)
+            ->where('biometric_id', '>=', $startBiometric)
             ->whereNotIn('biometric_id', function ($query) {
                 $query->select('biometric_id')
                     ->from('employee_profiles');
@@ -116,7 +157,7 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
-        
+
         $request->validate([
             'last_name' => 'required|string|max:255',
             'first_name' => 'required|string|max:255',
@@ -147,12 +188,12 @@ class AuthController extends Controller
     public function activate()
     {
 
-      
+
         if (!isset(request()->data) && !session()->has("user")) {
             return redirect()->route("portal.expire");
         }
 
-        $user =session()->has("user") ? session()->get("user") : decrypt(request()->data);
+        $user = session()->has("user") ? session()->get("user") : decrypt(request()->data);
 
         $nextBiometric = $this->SaveUser($user);
 

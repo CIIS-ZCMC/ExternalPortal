@@ -98,8 +98,10 @@
                             <div class="card">
                                 <h1>Check your email</h1>
                                 <p>Hi {{ $user['first_name'] }},</p>
-                                <p>We just sent an important message to <strong>{{ $user['email'] }}</strong>. Please
-                                    open your inbox and follow the instructions there to complete the process.</p>
+                                <p>{{ isset(request()->isResetPassword) ? 'We have sent a password reset link to' : 'We just sent an important message to' }}
+                                    <strong>{{ $user['email'] }}</strong>. Please
+                                    open your inbox and follow the instructions there to complete the process.
+                                </p>
 
                                 <p style="margin-top:6px; margin-bottom:18px;">If you don't see the email, check your
                                     spam or promotions folder — sometimes it lands there. If it's still missing, you can
@@ -110,7 +112,7 @@
                                     <a class="btn" href="https://mail.google.com/mail/u/0/#inbox" rel="noopener">Open
                                         my
                                         email</a>
-                                 
+
                                 </p>
 
 

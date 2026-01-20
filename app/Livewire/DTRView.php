@@ -14,8 +14,17 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Illuminate\Contracts\Support\Htmlable;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Checkbox;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Actions\HeaderActionsPosition;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\TimePicker;
+use Filament\Schemas\Components\Grid as ComponentsGrid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+
+
 
 class DTRView extends TableWidget
 {
@@ -103,20 +112,71 @@ class DTRView extends TableWidget
             ->emptyStateHeading('No DTR Found')
             ->headerActionsPosition(HeaderActionsPosition::Bottom)
             ->headerActions([
-                Action::make('Printdtr')
-                    ->label('Print DTR')
-                    ->hidden(fn() => $this->getTableQuery()->count() == 0)
-                    ->icon(Heroicon::Printer)
-                    ->action(function () {
-                        $url = "https://umis.zcmc.online/generateDtr?" .
-                            "biometric_id=[" . Auth::user()->biometric_id .
-                            "]&monthof=" . $this->month .
-                            "&yearof=" . $this->year .
-                            "&view=2&frontview=0&whole_month=1";
+                // Action::make('Printdtr')
+                //     ->label('Print DTR')
+                //     ->hidden(fn() => $this->getTableQuery()->count() == 0)
+                //     ->icon(Heroicon::Printer)
+                //     ->action(function () {
+                //         $url = "https://umis.zcmc.online/generateDtr?" .
+                //             "biometric_id=[" . Auth::user()->biometric_id .
+                //             "]&monthof=" . $this->month .
+                //             "&yearof=" . $this->year .
+                //             "&view=2&frontview=0&whole_month=1";
 
-                        // Trigger download in the browser
-                        $this->dispatch('open-new-tab', ['url' => $url]);
-                    })
+                //         // Trigger download in the browser
+                //         $this->dispatch('open-new-tab', ['url' => $url]);
+                //     }),
+                Action::make("is_shifting_action")
+                    ->label("Print DTR")
+                    ->modalDescription("Since this schedule is not pre-defined, please specify if it follows a shifting pattern or manually designate specific dates for customized scheduling to ensure accurate DTR generation.")
+                    ->color("info")
+                    ->icon(Heroicon::CalendarDays)
+                    ->modalWidth("md")
+                    ->schema([
+
+                        Section::make()
+                            ->components([
+                                Checkbox::make("all_shifting")
+                                    ->label("Mark all as w/shifting schedule")
+                                    ->live()
+                                    ->default(false),
+                            ]),
+
+                        Repeater::make('monthly_schedules')
+                            ->hidden(fn($get) => $get('all_shifting'))
+                            ->label('Days of the Month')
+                            ->schema([
+                                ComponentsGrid::make(4)
+                                    ->schema([
+                                        // The specific date
+                                        DatePicker::make('dtr_date')
+                                            ->label('Date')
+                                            ->required(),
+
+                                        // The Shifting Toggle
+                                        Checkbox::make("is_shifting")
+                                            ->label("Shifting?")
+                                            ->live() // Essential for reactivity
+                                            ->default(false),
+
+
+                                    ])
+                                    ->columns(2),
+
+                                // You can add second_in/out here as well using the same visible() logic
+                            ])
+                            ->addable(true)    // Prevents adding random rows
+                            ->deletable(true)  // Prevents deleting dates
+                            ->reorderable(false)
+                            ->columns(1),
+
+                    ])
+                    ->modalSubmitActionLabel("Save changes")
+                    ->modalCancelActionLabel("Cancel")
+                    ->action(function ($data) {
+                        dd($data);
+                        //   $this->dispatch('open-new-tab', ['url' => $url]);
+                    }),
 
             ])
             ->recordActions([])

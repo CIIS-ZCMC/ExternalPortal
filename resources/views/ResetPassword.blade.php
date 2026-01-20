@@ -4,11 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZCMC External Portal Login</title>
+    <title>ZCMC External Portal - Reset Password</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="shortcut icon" href="https://portal.zcmc.online/assets/zcmc-DW37XhWu.png" type="image/x-icon">
 
     <style>
+        /* CSS is identical to the Forgot Password page to keep branding consistent */
         * {
             margin: 0;
             padding: 0;
@@ -31,7 +32,6 @@
             border-radius: 15px;
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
             animation: fadeIn 0.6s ease-out;
-            transition: opacity 0.5s ease;
         }
 
         @keyframes fadeIn {
@@ -47,7 +47,7 @@
         }
 
         .submitting {
-            opacity: 0.4;
+            opacity: 0.5;
             pointer-events: none;
         }
 
@@ -62,7 +62,7 @@
 
         h2 {
             text-align: center;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             font-weight: 600;
             font-size: 22px;
             color: #1064a3;
@@ -70,9 +70,10 @@
 
         p {
             text-align: center;
-            font-size: 14px;
-            color: #444;
+            font-size: 13px;
+            color: #666;
             margin-bottom: 25px;
+            line-height: 1.5;
         }
 
         .form-group {
@@ -92,7 +93,6 @@
             border: 1px solid #ccc;
             border-radius: 8px;
             font-size: 15px;
-            transition: 0.3s;
         }
 
         input:focus {
@@ -146,100 +146,71 @@
             display: none;
         }
 
-        .footer-text {
-            margin-top: 18px;
-            text-align: center;
-            font-size: 13px;
-            color: #777;
-        }
-
-        .footer-text a {
-            color: #1064a3;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .footer-text a:hover {
-            text-decoration: underline;
-        }
-
-        .alert {
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            color: #fff;
-            font-size: 14px;
-        }
-
         .alert-danger {
             background-color: #dc3545;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #fff;
         }
     </style>
 </head>
 
 <body>
 
-    <div class="login-wrapper" id="loginBox">
+    <div class="login-wrapper" id="actionBox">
         <div class="logo">
-            <img src="{{ asset('asset/zcmc.png') }}" alt="ZCMC Logo">
+            <img src="https://portal.zcmc.online/assets/zcmc-DW37XhWu.png" alt="ZCMC Logo">
         </div>
-        <h2>ZCMC External Portal</h2>
-        <p>Employee DTR</p>
+        <h2>Create New Password</h2>
+        <p>Your identity is verified. Please set a strong new password for your account.</p>
 
-        @if (session('error'))
-            <div class="alert alert-danger">
-                {{ session('error') }}
-            </div>
+        @if ($errors->any())
+            <div class="alert alert-danger">{{ $errors->first() }}</div>
         @endif
 
-        <form action="{{ route('login') }}" method="post" id="loginForm">
+        <form action="{{ route('portal.savePassword') }}" method="POST" id="mainForm">
             @csrf
+            {{-- <input type="hidden" name="token" value="{{ $token }}"> --}}
+            <input type="hidden" name="email" value="{{ $email }}">
+
             <div class="form-group">
-                <label for="empid">Username</label>
-                <input name="username" required type="text" id="empid" placeholder="Enter Username">
+                <label for="password">New Password</label>
+                <input type="password" name="password" id="password" placeholder="Enter new password" required
+                    autofocus>
             </div>
 
             <div class="form-group">
-                <label for="password">Password</label>
-                <input name="password" required type="password" id="password" placeholder="Enter Password">
+                <label for="password_confirmation">Confirm Password</label>
+                <input type="password" name="password_confirmation" id="password_confirmation"
+                    placeholder="Repeat new password" required>
             </div>
 
-            <p style="text-align: right;"><a style="text-decoration: none;" href="/portal/forgot-password">Forgot
-                    Password
-                    ?</a></p>
-
-            <button type="submit" id="loginBtn" style="margin-top: -10px">
-                <span>Login</span>
+            <button type="submit" id="submitBtn">
                 <div class="spinner"></div>
+                <span>Update Password</span>
             </button>
         </form>
-
-        <button style="background-color:white;color:#333"
-            className="mt-4 text-primary shadow-lg h-15 w-full flex items-center justify-center gap-2 border border-gray-200 rounded-md p-2 bg-white hover:bg-gray-100"
-            onClick="window.location.href = '/auth/google'">
-            <img src="{{ asset('asset/googleLogin.png') }}" alt="Google login" style="width:17px;height:17px" />
-            Login with Google
-        </button>
-
-        <div class="footer-text">
-            <p><a href="/portal/register">Register</a></p>
-
-
-        </div>
     </div>
 
     <script>
-        const form = document.getElementById("loginForm");
-        const button = document.getElementById("loginBtn");
-        const wrapper = document.getElementById("loginBox");
+        const form = document.getElementById('mainForm');
+        const btn = document.getElementById('submitBtn');
+        const box = document.getElementById('actionBox');
 
-        form.addEventListener("submit", () => {
-            button.classList.add("loading");
-            wrapper.classList.add("submitting");
-            button.disabled = true;
-        });
+        const password = document.getElementById('password');
+        const password_confirmation = document.getElementById('password_confirmation');
+
+        form.onsubmit = function() {
+            if (password.value !== password_confirmation.value) {
+                alert('Passwords do not match');
+                return false;
+            }
+            btn.classList.add('loading');
+            box.classList.add('submitting');
+        };
     </script>
-
 </body>
 
 </html>

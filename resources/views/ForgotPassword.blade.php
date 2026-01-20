@@ -178,66 +178,53 @@
 </head>
 
 <body>
-
     <div class="login-wrapper" id="loginBox">
         <div class="logo">
-            <img src="{{ asset('asset/zcmc.png') }}" alt="ZCMC Logo">
+            <img src="https://portal.zcmc.online/assets/zcmc-DW37XhWu.png" alt="ZCMC Logo">
         </div>
-        <h2>ZCMC External Portal</h2>
-        <p>Employee DTR</p>
+        <h2>Reset Password</h2>
+        <p>Enter your registered email address and we'll send you instructions to reset your password.</p>
 
-        @if (session('error'))
-            <div class="alert alert-danger">
-                {{ session('error') }}
+        @if (session('status'))
+            <div class="alert" style="background-color: #28a745; margin-bottom: 15px;">
+                {{ session('status') }}
             </div>
         @endif
 
-        <form action="{{ route('login') }}" method="post" id="loginForm">
+        @if ($errors->has('email'))
+            <div class="alert alert-danger">
+                {{ $errors->first('email') }}
+            </div>
+        @endif
+
+        <form action="" method="POST" id="forgotPasswordForm">
             @csrf
             <div class="form-group">
-                <label for="empid">Username</label>
-                <input name="username" required type="text" id="empid" placeholder="Enter Username">
+                <label for="email">Email Address</label>
+                <input type="email" autofocus name="email" id="email" placeholder="e.g. juandelacruz@gmail.com"
+                    required>
             </div>
 
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input name="password" required type="password" id="password" placeholder="Enter Password">
-            </div>
-
-            <p style="text-align: right;"><a style="text-decoration: none;" href="/portal/forgot-password">Forgot
-                    Password
-                    ?</a></p>
-
-            <button type="submit" id="loginBtn" style="margin-top: -10px">
-                <span>Login</span>
+            <button type="submit" id="submitBtn">
                 <div class="spinner"></div>
+                <span>Send Reset Link</span>
             </button>
         </form>
 
-        <button style="background-color:white;color:#333"
-            className="mt-4 text-primary shadow-lg h-15 w-full flex items-center justify-center gap-2 border border-gray-200 rounded-md p-2 bg-white hover:bg-gray-100"
-            onClick="window.location.href = '/auth/google'">
-            <img src="{{ asset('asset/googleLogin.png') }}" alt="Google login" style="width:17px;height:17px" />
-            Login with Google
-        </button>
-
         <div class="footer-text">
-            <p><a href="/portal/register">Register</a></p>
-
-
+            Remember your password? <a href="{{ route('portal.login') }}">Back to Login</a>
         </div>
     </div>
 
     <script>
-        const form = document.getElementById("loginForm");
-        const button = document.getElementById("loginBtn");
-        const wrapper = document.getElementById("loginBox");
+        const form = document.getElementById('forgotPasswordForm');
+        const btn = document.getElementById('submitBtn');
+        const box = document.getElementById('loginBox');
 
-        form.addEventListener("submit", () => {
-            button.classList.add("loading");
-            wrapper.classList.add("submitting");
-            button.disabled = true;
-        });
+        form.onsubmit = function() {
+            btn.classList.add('loading');
+            box.classList.add('submitting');
+        };
     </script>
 
 </body>
