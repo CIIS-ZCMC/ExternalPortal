@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\DTR as DailyTimeRecord;
 use Filament\Actions\BulkActionGroup;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,16 +15,18 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Illuminate\Contracts\Support\Htmlable;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Checkbox;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Actions\HeaderActionsPosition;
+use App\Models\CustomSchedule;
+use App\Models\PortalSetting;
+use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\TimePicker;
 use Filament\Schemas\Components\Grid as ComponentsGrid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
-
 
 
 class DTRView extends TableWidget
@@ -69,6 +72,7 @@ class DTRView extends TableWidget
 
     public function table(Table $table): Table
     {
+        $isUnderMaintenance = false; //Auth::guard("external")->user()->biometric_id !== 8010;
         return $table
             ->query(fn(): Builder => $this->getTableQuery())
             ->columns([
@@ -113,9 +117,11 @@ class DTRView extends TableWidget
             ->headerActionsPosition(HeaderActionsPosition::Bottom)
             ->headerActions([
                 // Action::make('Printdtr')
-                //     ->label('Print DTR')
-                //     ->hidden(fn() => $this->getTableQuery()->count() == 0)
-                //     ->icon(Heroicon::Printer)
+                //     ->label(fn()=>$isUnderMaintenance ? "Printing - Under Maintenance":'Print DTR')
+                //    // ->hidden(fn() => $this->getTableQuery()->count() == 0)
+                //    ->icon(fn()=>$isUnderMaintenance ? Heroicon::ExclamationTriangle : Heroicon::Printer)
+                //    ->disabled(fn() => $isUnderMaintenance)
+
                 //     ->action(function () {
                 //         $url = "https://umis.zcmc.online/generateDtr?" .
                 //             "biometric_id=[" . Auth::user()->biometric_id .
@@ -127,24 +133,34 @@ class DTRView extends TableWidget
                 //         $this->dispatch('open-new-tab', ['url' => $url]);
                 //     }),
                 Action::make("is_shifting_action")
+                    ->hidden(fn() => $isUnderMaintenance ? true : false || $this->getTableQuery()->count() == 0)
                     ->label("Print DTR")
                     ->modalDescription("Since this schedule is not pre-defined, please specify if it follows a shifting pattern or manually designate specific dates for customized scheduling to ensure accurate DTR generation.")
                     ->color("info")
                     ->icon(Heroicon::CalendarDays)
-                    ->modalWidth("md")
+                    ->modalWidth("lg")
                     ->schema([
 
                         Section::make()
                             ->components([
-                                Checkbox::make("all_shifting")
-                                    ->label("Mark all as w/shifting schedule")
+
+                                Radio::make('schedule_type')
+                                    ->label('Select Schedule Type')
+
+                                    ->options([
+                                        'normal' => 'Normal schedule ( 8 am - 12 pm | 1 pm - 5 pm )',
+                                        'shifting' => 'Shifting schedule',
+                                        'custom' => 'Select specific dates as shifting/normal',
+                                    ])
+                                    ->default('normal')
                                     ->live()
-                                    ->default(false),
+
                             ]),
 
+
                         Repeater::make('monthly_schedules')
-                            ->hidden(fn($get) => $get('all_shifting'))
-                            ->label('Days of the Month')
+                            ->hidden(fn($get) => $get('schedule_type') == 'normal' || $get('schedule_type') == 'shifting')
+                            ->label('Add date to be set as shifting schedule')
                             ->schema([
                                 ComponentsGrid::make(4)
                                     ->schema([
@@ -154,29 +170,77 @@ class DTRView extends TableWidget
                                             ->required(),
 
                                         // The Shifting Toggle
-                                        Checkbox::make("is_shifting")
-                                            ->label("Shifting?")
-                                            ->live() // Essential for reactivity
-                                            ->default(false),
+
 
 
                                     ])
-                                    ->columns(2),
+                                    ->columns(1),
 
                                 // You can add second_in/out here as well using the same visible() logic
                             ])
                             ->addable(true)    // Prevents adding random rows
                             ->deletable(true)  // Prevents deleting dates
                             ->reorderable(false)
+                            ->addActionLabel("Add Date")
                             ->columns(1),
 
                     ])
-                    ->modalSubmitActionLabel("Save changes")
+                    ->modalSubmitActionLabel("Save changes & Print DTR")
                     ->modalCancelActionLabel("Cancel")
                     ->action(function ($data) {
-                        dd($data);
-                        //   $this->dispatch('open-new-tab', ['url' => $url]);
+
+                        $portal = PortalSetting::where('external_employee_id', Auth::user()->id)
+                            ->where('month', $this->month)
+                            ->where('year', $this->year)
+                            ->first();
+                        if (!$portal) {
+                            $portal = PortalSetting::create([
+                                'external_employee_id' => Auth::user()->id,
+                                'schedule_type' => $data['schedule_type'],
+                                'month' => $this->month,
+                                'year' => $this->year,
+                            ]);
+                        }
+                        $portal->update([
+                            'schedule_type' => $data['schedule_type'],
+                            'month' => $this->month,
+                            'year' => $this->year,
+                        ]);
+
+                        if (isset($data['monthly_schedules'])) {
+                            $monthly_schedules = $data['monthly_schedules'];
+                            $schedules = [];
+                            foreach ($monthly_schedules as $key => $value) {
+                                $schedules[] = CustomSchedule::UpdateOrCreate([
+                                    'portal_setting_id' => $portal->id,
+                                    'dtr_date' => $value['dtr_date'],
+                                ], [
+                                    'is_shifting' => true,
+                                ]);
+                            }
+                        }
+
+                        if ($data['schedule_type'] !== "custom") {
+                            CustomSchedule::where("portal_setting_id", $portal->id)
+                                ->whereIn("portal_setting_id", function ($query) {
+                                    $query->select("id")
+                                        ->from("portal_settings")
+                                        ->whereNot("schedule_type", "custom");
+                                })->delete();
+                        }
+
+
+
+                        $url = "https://umis.zcmc.online/generateDtr?" .
+                            "biometric_id=[" . Auth::user()->biometric_id .
+                            "]&monthof=" . $this->month .
+                            "&yearof=" . $this->year .
+                            "&view=2&frontview=0&whole_month=1&ext=" . Auth::user()->id;
+
+                        // Trigger download in the browser
+                        $this->dispatch('open-new-tab', ['url' => $url]);
                     }),
+
 
             ])
             ->recordActions([])
