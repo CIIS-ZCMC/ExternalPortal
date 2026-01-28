@@ -40,8 +40,6 @@ class DTR extends Page implements HasTable
         $hour = now()->hour;
         $name = Auth::user()->name;
 
-
-
         $greeting = $hour < 12
             ? 'Good Morning'
             : ($hour < 18 ? 'Good Afternoon' : 'Good Evening');

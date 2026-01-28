@@ -2,7 +2,9 @@
 
 namespace App\Livewire;
 
+use App\Models\DeviceLogs;
 use App\Models\DTR as DailyTimeRecord;
+use DB;
 use Filament\Actions\BulkActionGroup;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Tables\Table;
@@ -27,6 +29,7 @@ use Filament\Forms\Components\TimePicker;
 use Filament\Schemas\Components\Grid as ComponentsGrid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
+use Illuminate\Support\Facades\Cache;
 
 
 class DTRView extends TableWidget
@@ -62,19 +65,97 @@ class DTRView extends TableWidget
         $this->year = $year;
     }
 
+
+
     protected function getTableQuery(): Builder
     {
+
+        // if(Auth::user()->biometric_id == 8010){
+        //     $biometric_id = Auth::user()->biometric_id;
+        //     $devicelogs = DB::select("select * from device_logs where biometric_id = $biometric_id and Month(dtr_date) = $this->month and YEAR(dtr_date)= $this->year");
+
+
+        //     $dtRecords = collect($devicelogs)
+        //     ->groupBy('dtr_date')
+        //     ->map(function ($logs, $date) {
+
+        //         $sortedLogs = $logs->sortBy('date_time')->values();
+
+        //         return [
+        //             'id'         => $sortedLogs->first()->id,
+        //             'dtr_date'   => $date,
+        //             'first_in'   => $sortedLogs->get(0)->date_time ?? null,
+        //             'first_out'  => $sortedLogs->get(1)->date_time ?? null,
+        //             'second_in'  => $sortedLogs->get(2)->date_time ?? null,
+        //             'second_out' => $sortedLogs->get(3)->date_time ?? null,
+        //         ];
+        //     })
+        //     ->values();
+
+
+        //     return $dtRecords;
+
+
+        // }
+
         return DailyTimeRecord::query()
             ->where('biometric_id', Auth::user()->biometric_id)
             ->whereMonth('dtr_date', $this->month)
             ->whereYear('dtr_date', $this->year);
     }
 
+    public function getDtrRecords()
+    {
+        $biometric_id = Auth::user()->biometric_id;
+        // $devicelogs = DB::select("select * from device_logs where biometric_id = $biometric_id and Month(dtr_date) = $this->month and YEAR(dtr_date)= $this->year");
+
+        $cacheKey = "dtr_logs_{$biometric_id}_{$this->year}_{$this->month}";
+
+        $devicelogs = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($biometric_id) {
+            return DB::select("SELECT * FROM device_logs WHERE biometric_id = ? AND Month(dtr_date) = ? AND YEAR(dtr_date) = ?", [
+                $biometric_id,
+                $this->month,
+                $this->year
+            ]);
+        });
+
+
+
+
+        $dtRecords = collect($devicelogs)
+            ->groupBy('dtr_date')
+            ->map(function ($logs, $date) {
+
+                $sortedLogs = $logs->sortBy('date_time')->values();
+
+                return [
+                    'id'         => $sortedLogs->first()->id,
+                    'dtr_date'   => $date,
+                    'first_in'   => $sortedLogs->get(0)->date_time ?? null,
+                    'first_out'  => $sortedLogs->get(1)->date_time ?? null,
+                    'second_in'  => $sortedLogs->get(2)->date_time ?? null,
+                    'second_out' => $sortedLogs->get(3)->date_time ?? null,
+                ];
+            })
+            ->values();
+
+
+        $filterData = $this->tableFilters['dtr_date_filter'] ?? [];
+        $selectedDate = $filterData['selected_date'] ?? null;
+
+        if ($selectedDate) {
+            // Filter the PHP collection before returning it to the table
+            return $dtRecords->where('dtr_date', $selectedDate);
+        }
+
+        return $dtRecords;
+    }
+
     public function table(Table $table): Table
     {
         $isUnderMaintenance = false; //Auth::guard("external")->user()->biometric_id !== 8010;
         return $table
-            ->query(fn(): Builder => $this->getTableQuery())
+            ->records(fn() => $this->getDtrRecords())
             ->columns([
                 TextColumn::make('dtr_date')
                     ->label('Weekday')
@@ -83,16 +164,16 @@ class DTRView extends TableWidget
                     ->formatStateUsing(function ($state) {
                         return Carbon::parse($state)->format('d') . " | " . Carbon::parse($state)->format('D');
                     }),
-                TextColumn::make('first_in')->label('First In')->searchable()
+                TextColumn::make('first_in')->label('Arrival/Departure')->searchable()
                     ->formatStateUsing(fn($state) => Carbon::parse($state)->format('h:i A'))
                     ->sortable(),
-                TextColumn::make('first_out')->label('First Out')->searchable()
+                TextColumn::make('first_out')->label('Arrival/Departure')->searchable()
                     ->formatStateUsing(fn($state) => Carbon::parse($state)->format('h:i A'))
                     ->sortable(),
-                TextColumn::make('second_in')->label('Second In')->searchable()
+                TextColumn::make('second_in')->label('Arrival/Departure')->searchable()
                     ->formatStateUsing(fn($state) => Carbon::parse($state)->format('h:i A'))
                     ->sortable(),
-                TextColumn::make('second_out')->label('Second Out')->searchable()
+                TextColumn::make('second_out')->label('Arrival/Departure')->searchable()
                     ->formatStateUsing(fn($state) => Carbon::parse($state)->format('h:i A'))
                     ->sortable(),
 
@@ -103,15 +184,19 @@ class DTRView extends TableWidget
 
             ])
             ->filters([
-                Filter::make("dtr_date")
-                    ->schema([
-                        DatePicker::make("dtr_date")
-                            ->label("Select Date")
-                            ->reactive(),
-                    ])->query(function (Builder $query, array $data) {
-                        return $query
-                            ->when($data['dtr_date'], fn($q) => $q->whereDate('dtr_date', $data['dtr_date']));
+                Filter::make("dtr_date_filter") // Give it a unique name
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['selected_date'] ?? null) {
+                            $indicators[] = 'Date: ' . Carbon::parse($data['selected_date'])->toFormattedDateString();
+                        }
+                        return $indicators;
                     })
+                    ->schema([
+                        DatePicker::make("selected_date")
+                            ->label("Select Date")
+                            ->live(), // Ensures the table refreshes when changed
+                    ])
             ])
             ->emptyStateHeading('No DTR Found')
             ->headerActionsPosition(HeaderActionsPosition::Bottom)
