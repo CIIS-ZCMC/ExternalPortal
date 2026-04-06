@@ -24,21 +24,12 @@ class ScheduleForm
                     ->description("Define the shift hours to accurately align with Daily Time Records (DTR).")
                     ->icon(Heroicon::Calendar)
                     ->components([
-
-                        Checkbox::make('is_shifting')
-                            ->label("Is Shifting")
-                            // ->afterStateHydrated(function ($component, $state, $record) {
-                            //     if (! $record) return;
-                            //     $component->state($record->plantilla->first()->is_contract);
-                            // })
-                            ->live()
-                            ->columnSpan(1),
-
-
-                        Repeater::make('pricings')
+                        Repeater::make('schedule_4entries')
                             ->label('Time Management')
                             ->table([
-                                TableColumn::make('Schedule'),
+                                TableColumn::make('Is Shifting'),
+                                TableColumn::make('Is Office hrs'),
+                                TableColumn::make('Schedule Date'),
                                 TableColumn::make('First In'),
                                 TableColumn::make('First Out'),
                                 TableColumn::make('Second In'),
@@ -58,7 +49,29 @@ class ScheduleForm
                                 // $component->state($data);
                             })
                             ->schema([
-                                DatePicker::make("date")
+                                Checkbox::make('is_shifting')
+                                    ->label("Is Shifting")
+                                    ->live()
+                                    ->columnSpan(1),
+                                Checkbox::make('is_normal')
+                                    ->label("Is Normal")
+                                    ->disabled(fn($get) => $get('is_shifting'))
+                                    ->live()
+                                    ->afterStateUpdated(function ($set, $get) {
+                                        if ($get('is_normal')) {
+                                            $set("first_in", "08:00:00");
+                                            $set("first_out", "12:00:00");
+                                            $set("second_in", "13:00:00");
+                                            $set("second_out", "17:00:00");
+                                        } else {
+                                            $set("first_in", null);
+                                            $set("first_out", null);
+                                            $set("second_in", null);
+                                            $set("second_out", null);
+                                        }
+                                    })
+                                    ->columnSpan(1),
+                                DatePicker::make("dtr_date")
                                     ->label("Schedule Date")
                                     ->required(),
                                 TimePicker::make("first_in")
@@ -66,9 +79,12 @@ class ScheduleForm
                                     ->required(),
                                 TimePicker::make("first_out")
                                     ->label("First Out")
+                                    ->hidden(fn($get) => $get('is_shifting'))
                                     ->required(),
                                 TimePicker::make("second_in")
                                     ->label("Second In")
+                                    ->hidden(fn($get) => $get('is_shifting'))
+
                                     ->required(),
                                 TimePicker::make("second_out")
                                     ->label("Second Out")
@@ -79,9 +95,7 @@ class ScheduleForm
                             ->addActionLabel('Add Schedule entry')
                             ->required(),
 
-
                     ])
-
                     ->columnSpanFull()
             ]);
     }

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger("external_employee_id");
             $table->date("dtr_date");
+            $table->boolean("is_shifting")->default(false);
             $table->string('first_in')->nullable();
             $table->string('first_out')->nullable();
             $table->string('second_in')->nullable();

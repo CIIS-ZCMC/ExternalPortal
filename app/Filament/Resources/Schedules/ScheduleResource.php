@@ -19,11 +19,15 @@ class ScheduleResource extends Resource
 {
     protected static ?string $model = ExternalEmployeeSchedule::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::SquaresPlus;
 
     protected static ?string $recordTitleAttribute = 'ExternalEmployeeSchedule';
 
-    protected static bool $shouldRegisterNavigation = false;
+    protected static ?string $navigationLabel = "My Schedules";
+
+    protected static ?int $navigationSort = 2;
+
+    //protected static bool $shouldRegisterNavigation = false;
 
 
 
@@ -31,6 +35,8 @@ class ScheduleResource extends Resource
     {
         return ScheduleForm::configure($schema);
     }
+
+
 
     public static function table(Table $table): Table
     {

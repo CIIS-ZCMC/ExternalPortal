@@ -29,6 +29,7 @@ use Filament\Forms\Components\TimePicker;
 use Filament\Schemas\Components\Grid as ComponentsGrid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Tables\Columns\IconColumn;
 use Illuminate\Support\Facades\Cache;
 
 
@@ -65,45 +66,6 @@ class DTRView extends TableWidget
         $this->year = $year;
     }
 
-
-
-    protected function getTableQuery(): Builder
-    {
-
-        // if(Auth::user()->biometric_id == 8010){
-        //     $biometric_id = Auth::user()->biometric_id;
-        //     $devicelogs = DB::select("select * from device_logs where biometric_id = $biometric_id and Month(dtr_date) = $this->month and YEAR(dtr_date)= $this->year");
-
-
-        //     $dtRecords = collect($devicelogs)
-        //     ->groupBy('dtr_date')
-        //     ->map(function ($logs, $date) {
-
-        //         $sortedLogs = $logs->sortBy('date_time')->values();
-
-        //         return [
-        //             'id'         => $sortedLogs->first()->id,
-        //             'dtr_date'   => $date,
-        //             'first_in'   => $sortedLogs->get(0)->date_time ?? null,
-        //             'first_out'  => $sortedLogs->get(1)->date_time ?? null,
-        //             'second_in'  => $sortedLogs->get(2)->date_time ?? null,
-        //             'second_out' => $sortedLogs->get(3)->date_time ?? null,
-        //         ];
-        //     })
-        //     ->values();
-
-
-        //     return $dtRecords;
-
-
-        // }
-
-        return DailyTimeRecord::query()
-            ->where('biometric_id', Auth::user()->biometric_id)
-            ->whereMonth('dtr_date', $this->month)
-            ->whereYear('dtr_date', $this->year);
-    }
-
     public function getDtrRecords()
     {
         $biometric_id = Auth::user()->biometric_id;
@@ -111,13 +73,21 @@ class DTRView extends TableWidget
 
         $cacheKey = "dtr_logs_{$biometric_id}_{$this->year}_{$this->month}";
 
-        $devicelogs = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($biometric_id) {
-            return DB::select("SELECT * FROM device_logs WHERE biometric_id = ? AND Month(dtr_date) = ? AND YEAR(dtr_date) = ?", [
-                $biometric_id,
-                $this->month,
-                $this->year
-            ]);
-        });
+        // $devicelogs = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($biometric_id) {
+        //     return DB::select("SELECT * FROM device_logs WHERE biometric_id = ? AND Month(dtr_date) = ? AND YEAR(dtr_date) = ?", [
+        //         $biometric_id,
+        //         $this->month,
+        //         $this->year
+        //     ]);
+        // });
+
+        $devicelogs = DB::select("SELECT * FROM device_logs WHERE biometric_id = ? AND Month(dtr_date) = ? AND YEAR(dtr_date) = ?", [
+            $biometric_id,
+            $this->month,
+            $this->year
+        ]);
+
+        dd($devicelogs);
 
 
 
@@ -135,9 +105,12 @@ class DTRView extends TableWidget
                     'first_out'  => $sortedLogs->get(1)->date_time ?? null,
                     'second_in'  => $sortedLogs->get(2)->date_time ?? null,
                     'second_out' => $sortedLogs->get(3)->date_time ?? null,
+                    'has_schedule' => "awwww",
                 ];
             })
             ->values();
+
+        dd($dtRecords);
 
 
         $filterData = $this->tableFilters['dtr_date_filter'] ?? [];
@@ -176,6 +149,10 @@ class DTRView extends TableWidget
                 TextColumn::make('second_out')->label('Arrival/Departure')->searchable()
                     ->formatStateUsing(fn($state) => Carbon::parse($state)->format('h:i A'))
                     ->sortable(),
+                IconColumn::make('has_schedule')
+                    ->label('Has Schedule')
+                    ->icon(fn($state): ?string => $state ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')
+                    ->color(fn($state): ?string => $state ? 'success' : 'danger'),
 
                 // TextColumn::make('undertime')->label('Undertime')->searchable()
                 //     ->sortable(),
@@ -218,60 +195,60 @@ class DTRView extends TableWidget
                 //         $this->dispatch('open-new-tab', ['url' => $url]);
                 //     }),
                 Action::make("is_shifting_action")
-                    ->hidden(fn() => $isUnderMaintenance ? true : false || $this->getTableQuery()->count() == 0)
+                    ->hidden(fn() => $isUnderMaintenance ? true : false || $this->getDtrRecords()->count() == 0)
                     ->label("Print DTR")
-                    ->modalDescription("Since this schedule is not pre-defined, please specify if it follows a shifting pattern or manually designate specific dates for customized scheduling to ensure accurate DTR generation.")
+                    //->modalDescription("Since this schedule is not pre-defined, please specify if it follows a shifting pattern or manually designate specific dates for customized scheduling to ensure accurate DTR generation.")
                     ->color("info")
                     ->icon(Heroicon::CalendarDays)
                     ->modalWidth("lg")
-                    ->schema([
+                    // ->schema([
 
-                        Section::make()
-                            ->components([
+                    //     Section::make()
+                    //         ->components([
 
-                                Radio::make('schedule_type')
-                                    ->label('Select Schedule Type')
+                    //             Radio::make('schedule_type')
+                    //                 ->label('Select Schedule Type')
 
-                                    ->options([
-                                        'normal' => 'Normal schedule ( 8 am - 12 pm | 1 pm - 5 pm )',
-                                        'shifting' => 'Shifting schedule',
-                                        'custom' => 'Select specific dates as shifting/normal',
-                                    ])
-                                    ->default('normal')
-                                    ->live()
+                    //                 ->options([
+                    //                     'normal' => 'Normal schedule ( 8 am - 12 pm | 1 pm - 5 pm )',
+                    //                     'shifting' => 'Shifting schedule',
+                    //                     'custom' => 'Select specific dates as shifting/normal',
+                    //                 ])
+                    //                 ->default('normal')
+                    //                 ->live()
 
-                            ]),
-
-
-                        Repeater::make('monthly_schedules')
-                            ->hidden(fn($get) => $get('schedule_type') == 'normal' || $get('schedule_type') == 'shifting')
-                            ->label('Add date to be set as shifting schedule')
-                            ->schema([
-                                ComponentsGrid::make(4)
-                                    ->schema([
-                                        // The specific date
-                                        DatePicker::make('dtr_date')
-                                            ->label('Date')
-                                            ->required(),
-
-                                        // The Shifting Toggle
+                    //         ]),
 
 
+                    //     Repeater::make('monthly_schedules')
+                    //         ->hidden(fn($get) => $get('schedule_type') == 'normal' || $get('schedule_type') == 'shifting')
+                    //         ->label('Add date to be set as shifting schedule')
+                    //         ->schema([
+                    //             ComponentsGrid::make(4)
+                    //                 ->schema([
+                    //                     // The specific date
+                    //                     DatePicker::make('dtr_date')
+                    //                         ->label('Date')
+                    //                         ->required(),
 
-                                    ])
-                                    ->columns(1),
+                    //                     // The Shifting Toggle
 
-                                // You can add second_in/out here as well using the same visible() logic
-                            ])
-                            ->addable(true)    // Prevents adding random rows
-                            ->deletable(true)  // Prevents deleting dates
-                            ->reorderable(false)
-                            ->addActionLabel("Add Date")
-                            ->columns(1),
 
-                    ])
-                    ->modalSubmitActionLabel("Save changes & Print DTR")
-                    ->modalCancelActionLabel("Cancel")
+
+                    //                 ])
+                    //                 ->columns(1),
+
+                    //             // You can add second_in/out here as well using the same visible() logic
+                    //         ])
+                    //         ->addable(true)    // Prevents adding random rows
+                    //         ->deletable(true)  // Prevents deleting dates
+                    //         ->reorderable(false)
+                    //         ->addActionLabel("Add Date")
+                    //         ->columns(1),
+
+                    // ])
+                    //  ->modalSubmitActionLabel("Save changes & Print DTR")
+                    // ->modalCancelActionLabel("Cancel")
                     ->action(function ($data) {
 
                         $portal = PortalSetting::where('external_employee_id', Auth::user()->id)
@@ -287,7 +264,7 @@ class DTRView extends TableWidget
                             ]);
                         }
                         $portal->update([
-                            'schedule_type' => $data['schedule_type'],
+                            'schedule_type' => "normal",
                             'month' => $this->month,
                             'year' => $this->year,
                         ]);
@@ -305,22 +282,26 @@ class DTRView extends TableWidget
                             }
                         }
 
-                        if ($data['schedule_type'] !== "custom") {
-                            CustomSchedule::where("portal_setting_id", $portal->id)
-                                ->whereIn("portal_setting_id", function ($query) {
-                                    $query->select("id")
-                                        ->from("portal_settings")
-                                        ->whereNot("schedule_type", "custom");
-                                })->delete();
-                        }
+                        // if ($data['schedule_type'] !== "custom") {
+                        //     CustomSchedule::where("portal_setting_id", $portal->id)
+                        //         ->whereIn("portal_setting_id", function ($query) {
+                        //             $query->select("id")
+                        //                 ->from("portal_settings")
+                        //                 ->whereNot("schedule_type", "custom");
+                        //         })->delete();
+                        // }
 
-
-
-                        $url = "https://umis.zcmc.online/generateDtr?" .
+                        $url = "http://192.168.8.95:8000/generateDtr?" .
                             "biometric_id=[" . Auth::user()->biometric_id .
                             "]&monthof=" . $this->month .
                             "&yearof=" . $this->year .
                             "&view=2&frontview=0&whole_month=1&ext=" . Auth::user()->id;
+
+                        // $url = "https://umis.zcmc.online/generateDtr?" .
+                        //     "biometric_id=[" . Auth::user()->biometric_id .
+                        //     "]&monthof=" . $this->month .
+                        //     "&yearof=" . $this->year .
+                        //     "&view=2&frontview=0&whole_month=1&ext=" . Auth::user()->id;
 
                         // Trigger download in the browser
                         $this->dispatch('open-new-tab', ['url' => $url]);

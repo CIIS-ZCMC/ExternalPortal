@@ -34,6 +34,8 @@ class DTR extends Page implements HasTable
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::CalendarDays;
 
+    protected static ?int $navigationSort = 1;
+
 
     public function getSubheading(): string|Htmlable|null
     {

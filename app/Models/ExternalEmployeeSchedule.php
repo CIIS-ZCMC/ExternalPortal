@@ -14,6 +14,7 @@ class ExternalEmployeeSchedule extends Model
     protected $fillable = [
         'external_employee_id',
         'dtr_date',
+        'is_shifting',
         'first_in',
         'first_out',
         'second_in',

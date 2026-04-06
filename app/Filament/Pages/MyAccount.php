@@ -29,6 +29,7 @@ class MyAccount extends Page implements HasForms
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::UserCircle;
 
+    protected static ?int $navigationSort = 3;
 
     public $state = [
         'username' => "",
