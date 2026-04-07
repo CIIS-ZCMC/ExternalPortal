@@ -20,6 +20,7 @@ use Filament\Actions\Action;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Actions\HeaderActionsPosition;
 use App\Models\CustomSchedule;
+use App\Models\ExternalEmployeeSchedule;
 use App\Models\PortalSetting;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Repeater;
@@ -87,14 +88,18 @@ class DTRView extends TableWidget
             $this->year
         ]);
 
-        dd($devicelogs);
-
+        $schedule = ExternalEmployeeSchedule::where("external_employee_id", Auth::user()->id)
+            ->whereMonth("dtr_date", $this->month)
+            ->whereYear("dtr_date", $this->year)
+            ->get();
 
 
 
         $dtRecords = collect($devicelogs)
+            ->sortBy('date_time')
             ->groupBy('dtr_date')
-            ->map(function ($logs, $date) {
+            ->sortKeys()
+            ->map(function ($logs, $date) use ($schedule) {
 
                 $sortedLogs = $logs->sortBy('date_time')->values();
 
@@ -105,12 +110,10 @@ class DTRView extends TableWidget
                     'first_out'  => $sortedLogs->get(1)->date_time ?? null,
                     'second_in'  => $sortedLogs->get(2)->date_time ?? null,
                     'second_out' => $sortedLogs->get(3)->date_time ?? null,
-                    'has_schedule' => "awwww",
+                    'has_schedule' => $schedule->where("dtr_date", $date)->count(),
                 ];
             })
             ->values();
-
-        dd($dtRecords);
 
 
         $filterData = $this->tableFilters['dtr_date_filter'] ?? [];
@@ -151,6 +154,7 @@ class DTRView extends TableWidget
                     ->sortable(),
                 IconColumn::make('has_schedule')
                     ->label('Has Schedule')
+                    ->tooltip(fn($state): ?string => $state ? 'Has schedule' : 'No schedule found, Please process schedule first as this will not be displayed in printouts')
                     ->icon(fn($state): ?string => $state ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')
                     ->color(fn($state): ?string => $state ? 'success' : 'danger'),
 

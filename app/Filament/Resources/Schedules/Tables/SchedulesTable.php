@@ -12,6 +12,7 @@ use Filament\Tables\Table;
 use App\Models\ExternalEmployeeSchedule;
 use Carbon\Carbon;
 use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TimePicker;
@@ -26,11 +27,13 @@ class SchedulesTable
     public static function configure(Table $table): Table
     {
         return $table
+
             ->modifyQueryUsing(function (Builder $query, $livewire) {
                 return $query
                     ->where('external_employee_id', Auth::guard('external')->id())
                     ->when($livewire->month, fn($q) => $q->whereMonth('dtr_date', $livewire->month))
-                    ->when($livewire->year, fn($q) => $q->whereYear('dtr_date', $livewire->year));
+                    ->when($livewire->year, fn($q) => $q->whereYear('dtr_date', $livewire->year))
+                    ->orderBy('dtr_date', 'asc');
             })
             ->recordUrl(null)
             ->columns([
@@ -142,7 +145,8 @@ class SchedulesTable
                             ->title('Schedule updated successfully')
                             ->success()
                             ->send();
-                    })
+                    }),
+                DeleteAction::make(),
 
             ])
             ->emptyStateHeading('No schedules found')
