@@ -15,6 +15,7 @@ use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TimePicker;
 use Filament\Notifications\Notification;
 use Filament\Tables\Filters\Filter;
@@ -111,6 +112,47 @@ class SchedulesTable
                             Checkbox::make('is_shifting')
                                 ->label("Is Shifting")
                                 ->live()
+                                ->columnSpan(1),
+                            Select::make('time_shift')
+                                ->label("Time Shift")
+                                ->disabled(fn($get) => !$get('is_shifting'))
+                                ->options([
+                                    '1' => '10:00 AM - 06:00 PM',
+                                    '2' => '02:00 PM - 10:00 PM',
+                                    '3' => '10:00 PM - 06:00 AM',
+                                    '4' => '06:00 AM - 02:00 PM',
+                                    '5' => '08:00 AM - 04:00 PM',
+                                    '6' => '08:00 AM - 08:00 AM',
+                                    '7' => '08:00 AM - 12:00 PM',
+                                    '8' => '01:00 PM - 05:00 PM',
+                                    '9' => '07:00 AM - 07:00 AM',
+                                    '10' => '03:00 PM - 07:00 AM',
+                                    '11' => '06:00 AM - 10:00 PM',
+                                ])
+                                ->live()
+                                ->afterStateUpdated(function ($set, $get) {
+                                    if ($get('time_shift')) {
+                                        $shift = $get('time_shift');
+                                        $shiftMap = [
+                                            '1' => ['10:00:00', '18:00:00'],
+                                            '2' => ['14:00:00', '22:00:00'],
+                                            '3' => ['22:00:00', '06:00:00'],
+                                            '4' => ['06:00:00', '14:00:00'],
+                                            '5' => ['08:00:00', '16:00:00'],
+                                            '6' => ['08:00:00', '08:00:00'],
+                                            '7' => ['08:00:00', '12:00:00'],
+                                            '8' => ['13:00:00', '17:00:00'],
+                                            '9' => ['07:00:00', '07:00:00'],
+                                            '10' => ['15:00:00', '23:00:00'],
+                                            '11' => ['06:00:00', '22:00:00'],
+                                        ];
+                                        $times = $shiftMap[$shift] ?? ['08:00:00', '16:00:00'];
+                                        $set("first_in", $times[0]);
+                                        $set("second_out", $times[1]);
+                                        $set("first_out", null);
+                                        $set("second_in", null);
+                                    }
+                                })
                                 ->columnSpan(1),
                             DatePicker::make("dtr_date")
                                 ->label("Schedule Date")
