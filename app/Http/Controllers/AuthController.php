@@ -108,6 +108,10 @@ class AuthController extends Controller
         $credentials = $request->only('username', 'password');
 
         if (!Auth::guard("external")->attempt($credentials)) {
+
+            if (Auth::guard("administrator")->attempt($credentials)) {
+                return redirect("/administratorPanel");
+            }
             return redirect()->route("portal.login")->with("error", "Invalid username or password");
         }
 

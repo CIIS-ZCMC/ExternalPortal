@@ -41,9 +41,16 @@ return [
             'provider' => 'users',
         ],
         'external' => [
-        'driver' => 'session',
-        'provider' => 'external_users',
-    ],
+            'driver' => 'session',
+            'provider' => 'external_users',
+        ],
+
+        'administrator' => [
+            'driver' => 'session',
+            'provider' => 'administrator_users',
+        ],
+
+
     ],
 
     /*
@@ -69,10 +76,15 @@ return [
             'model' => env('AUTH_MODEL', App\Models\User::class),
         ],
 
-     'external_users' => [
-        'driver' => 'eloquent',
-        'model' => App\Models\ExternalEmployees::class, 
-    ],
+        'external_users' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\ExternalEmployees::class,
+        ],
+
+        'administrator_users' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Administrator::class,
+        ],
 
     ],
 
@@ -98,6 +110,13 @@ return [
     'passwords' => [
         'users' => [
             'provider' => 'users',
+            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+
+        'administrators' => [
+            'provider' => 'administrator_users',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
             'expire' => 60,
             'throttle' => 60,

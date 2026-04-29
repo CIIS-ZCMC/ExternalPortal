@@ -1,9 +1,12 @@
 <?php
 
 namespace App\Providers;
+
 use App\Custom\CustomLogoutResponse;
 use Illuminate\Support\ServiceProvider;
 use Filament\Auth\Http\Responses\Contracts\LogoutResponse;
+use Illuminate\Support\Facades\Schema;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -11,7 +14,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-          $this->app->bind(LogoutResponse::class, CustomLogoutResponse::class);
+        $this->app->bind(LogoutResponse::class, CustomLogoutResponse::class);
     }
 
     /**
@@ -19,6 +22,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Schema::defaultStringLength(191);
     }
 }
