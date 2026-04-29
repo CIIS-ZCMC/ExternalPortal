@@ -49,6 +49,7 @@ class AdministratorPanelPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
+            ->globalSearch(false)
             ->authGuard("administrator")
             ->authMiddleware([
                 administratorMiddleware::class,

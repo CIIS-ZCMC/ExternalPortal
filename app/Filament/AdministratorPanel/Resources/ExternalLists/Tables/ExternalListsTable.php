@@ -2,6 +2,7 @@
 
 namespace App\Filament\AdministratorPanel\Resources\ExternalLists\Tables;
 
+use App\Filament\AdministratorPanel\Pages\ViewSchedule;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -142,6 +143,15 @@ class ExternalListsTable
                         // Trigger download in the browser
                         return redirect($url);
                     }),
+
+                Action::make("viewSchedule")
+                    ->label("View Schedule")
+                    ->icon("heroicon-o-eye")
+                    ->color("gray")
+                    ->url(fn($record): string => ViewSchedule::getUrl([
+                        'biometric_id' => $record->biometric_id
+                    ]))
+                    ->openUrlInNewTab(),
             ])
             ->toolbarActions([
                 // BulkActionGroup::make([
