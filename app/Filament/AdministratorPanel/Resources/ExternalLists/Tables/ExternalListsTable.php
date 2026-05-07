@@ -468,6 +468,11 @@ class ExternalListsTable
                     ]);
 
                     if($biometricRecord->biometric == "NOT_YET_REGISTERED"){
+                        Notification::make()
+                        ->title("Biometric ID : {$biometric_id} skipped")
+                        ->body('No biometric data found for this entry.')
+                        ->danger()
+                        ->send();
                         continue;
                     }
 
