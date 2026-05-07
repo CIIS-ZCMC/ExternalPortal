@@ -384,7 +384,17 @@ class ExternalListsTable
                                     $info = $utemp !== false && isset($utemp->Row->Information)
                                         ? trim((string) $utemp->Row->Information)
                                         : null;
-                                    $biometricRecord =   Biometrics::where('biometric_id', $biometric_id)->first();
+                                  
+                                    $biometricRecord =   Biometrics::firstOrCreate([
+                                        'biometric_id' => $biometric_id,
+                                    ], [
+                                        'name' => $record->name,
+                                        'privilege' => 0,
+                                        'biometric' => "NOT_YET_REGISTERED",
+                                        'name_with_biometric' => "External_" . $record->name
+                                    ]);
+
+                                   
                                     if ($info !== "No data!") {
                                         $BIO_User = [];
                                         foreach ($utemp->Row as $user_Cred) {
@@ -456,6 +466,10 @@ class ExternalListsTable
                         'biometric' => "NOT_YET_REGISTERED",
                         'name_with_biometric' => "External_" . $record->name
                     ]);
+
+                    if($biometricRecord->biometric == "NOT_YET_REGISTERED"){
+                        continue;
+                    }
 
                     $user_temp = $tad->get_user_template(['pin' => $biometric_id]);
                     $utemp = simplexml_load_string($user_temp);
