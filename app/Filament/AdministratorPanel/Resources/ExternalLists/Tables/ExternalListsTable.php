@@ -6,9 +6,12 @@ use App\Filament\AdministratorPanel\Pages\ViewSchedule;
 use App\Http\Controllers\DeviceController;
 use App\Models\Biometrics;
 use App\Models\Devices;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\TextInput;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use App\Models\DTR;
@@ -19,6 +22,7 @@ use Filament\Notifications\Notification;
 use Filament\Support\Enums\Alignment;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Enums\RecordActionsPosition;
+use Illuminate\Support\Facades\Hash;
 
 class ExternalListsTable
 {
@@ -123,6 +127,74 @@ class ExternalListsTable
             ])
             ->recordActionsPosition(RecordActionsPosition::BeforeColumns)
             ->recordActions([
+
+                ActionGroup::make([
+                    Action::make('deactivate')
+                    ->label('Deactivate')
+                    ->icon('heroicon-o-user-minus')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Deactivate Employee')
+                    ->modalDescription('Are you sure you want to deactivate this employee? They will no longer be able to log in.')
+                    ->action(function ($record) {
+                        $record->delete();
+                    })
+                    ->visible(fn($record) => $record->deleted_at === null),
+                Action::make('reset_password')
+                    ->label('Reset Password')
+                    ->icon(Heroicon::LockClosed)
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Reset Password')
+                    ->modalDescription('Are you sure you want to reset this employee password? , Please enter the new password')
+                    ->schema([
+
+                        TextInput::make('new_password')
+                            ->password()
+                            ->maxLength(255),
+
+                    ])
+                    ->action(function ($record, $data) {
+
+
+                        $record->update([
+                            'password' => Hash::make($data['new_password']),
+                        ]);
+
+                        Notification::make()
+                            ->title('Password Reset')
+                            ->body('Password has been reset successfully')
+                            ->success()
+                            ->send();
+                    }),
+                Action::make('update_email')
+                    ->label('Update Email')
+                    ->icon(Heroicon::AtSymbol)
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Update Email')
+                    ->modalDescription('Are you sure you want to update this employee email? , Please enter the new email')
+                    ->schema([
+
+                        TextInput::make('email')
+                            ->email()
+                            ->maxLength(255),
+
+                    ])
+                    ->action(function ($record, $data) {
+
+
+                        $record->update([
+                            'email' => $data['email'],
+                        ]);
+
+                        Notification::make()
+                            ->title('Email Updated')
+                            ->body('Email has been updated successfully')
+                            ->success()
+                            ->send();
+                    })
+                ]),
                 Action::make("Print_DTR")
                     ->label("Print DTR")
                     ->icon("heroicon-o-printer")
@@ -172,6 +244,7 @@ class ExternalListsTable
                         'biometric_id' => $record->biometric_id
                     ]))
                     ->openUrlInNewTab(),
+      
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
