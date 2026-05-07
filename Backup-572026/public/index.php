@@ -1,5 +1,5 @@
 <?php
-//echo "Please wait .. We are currently updating the system!";
+
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 
