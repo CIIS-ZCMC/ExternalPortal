@@ -29,8 +29,7 @@ class ExternalListsTable
             ->columns([
                 TextColumn::make("is_registered")
                     ->label("Is Registered")
-                    ->searchable()
-                    ->sortable()
+                   
                     ->badge()
                     ->size("10px")
                     ->color(function ($record) {
