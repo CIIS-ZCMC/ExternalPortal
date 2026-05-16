@@ -295,17 +295,17 @@ class DTRView extends TableWidget
                         //         })->delete();
                         // }
 
-                        $url = "http://192.168.8.95:8000/generateDtr?" .
-                            "biometric_id=[" . Auth::user()->biometric_id .
-                            "]&monthof=" . $this->month .
-                            "&yearof=" . $this->year .
-                            "&view=2&frontview=0&whole_month=1&ext=" . Auth::user()->id;
-
-                        // $url = "https://umis.zcmc.online/generateDtr?" .
+                        // $url = "http://192.168.8.95:8000/generateDtr?" .
                         //     "biometric_id=[" . Auth::user()->biometric_id .
                         //     "]&monthof=" . $this->month .
                         //     "&yearof=" . $this->year .
                         //     "&view=2&frontview=0&whole_month=1&ext=" . Auth::user()->id;
+
+                        $url = "https://umis.zcmc.online/generateDtr?" .
+                            "biometric_id=[" . Auth::user()->biometric_id .
+                            "]&monthof=" . $this->month .
+                            "&yearof=" . $this->year .
+                            "&view=2&frontview=0&whole_month=1&ext=" . Auth::user()->id;
 
                         // Trigger download in the browser
                         $this->dispatch('open-new-tab', ['url' => $url]);
