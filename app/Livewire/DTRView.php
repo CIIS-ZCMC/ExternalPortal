@@ -262,7 +262,7 @@ class DTRView extends TableWidget
                         if (!$portal) {
                             $portal = PortalSetting::create([
                                 'external_employee_id' => Auth::user()->id,
-                                'schedule_type' => $data['schedule_type'],
+                                'schedule_type' => isset($data['schedule_type']) ? $data['schedule_type']:"normal",
                                 'month' => $this->month,
                                 'year' => $this->year,
                             ]);
