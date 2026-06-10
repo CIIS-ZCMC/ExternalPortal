@@ -100,11 +100,19 @@ class DTRView extends TableWidget
             ->groupBy('dtr_date')
             ->sortKeys()
             ->map(function ($logs, $date) use ($schedule) {
-
-                $sortedLogs = $logs->sortBy('date_time')->values();
+                $sortedLogs = $logs->sortBy('date_time')
+                    ->groupBy(function($log) {
+                        return Carbon::parse($log->date_time)->format('H:i');
+                    })
+                    ->map(function($group) {
+                        return $group->first();
+                    })
+                    ->sortBy('date_time')
+                    ->values()
+                    ->take(4);
 
                 return [
-                    'id'         => $sortedLogs->first()->id,
+                    'id'         => $sortedLogs->first()->id ?? null,
                     'dtr_date'   => $date,
                     'first_in'   => $sortedLogs->get(0)->date_time ?? null,
                     'first_out'  => $sortedLogs->get(1)->date_time ?? null,

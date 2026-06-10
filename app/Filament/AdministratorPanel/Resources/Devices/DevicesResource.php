@@ -22,6 +22,16 @@ class DevicesResource extends Resource
     protected static ?int $navigationSort = 2;
         protected static ?string $recordTitleAttribute = 'Devices';
 
+
+    public static function canViewAny(): bool
+    {
+        $user = auth('administrator')->user();
+        if ($user && $user->role === 1) {
+            return true;
+        }
+        return false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return DevicesForm::configure($schema);

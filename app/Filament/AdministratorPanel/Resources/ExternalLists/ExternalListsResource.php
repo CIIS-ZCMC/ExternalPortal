@@ -24,6 +24,12 @@ class ExternalListsResource extends Resource
     protected static ?string $recordTitleAttribute = 'ExternalEmployees';
 
     protected static ?int $navigationSort = 1;
+
+      public static function canViewAny(): bool
+    {
+       
+        return true;
+    }
     
     public static function form(Schema $schema): Schema
     {

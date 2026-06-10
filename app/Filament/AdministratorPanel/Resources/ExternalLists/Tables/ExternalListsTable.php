@@ -3,6 +3,7 @@
 namespace App\Filament\AdministratorPanel\Resources\ExternalLists\Tables;
 
 use App\Filament\AdministratorPanel\Pages\ViewSchedule;
+use App\Filament\AdministratorPanel\Pages\ViewUserDTR;
 use App\Http\Controllers\DeviceController;
 use App\Models\Biometrics;
 use App\Models\Devices;
@@ -30,6 +31,7 @@ class ExternalListsTable
     {
         return $table
             ->recordUrl(null)
+            ->selectable(fn() => auth('administrator')->user()->role === 1)
             ->columns([
                 TextColumn::make("is_registered")
                     ->label("Is Registered")
@@ -244,7 +246,17 @@ class ExternalListsTable
                         'biometric_id' => $record->biometric_id
                     ]))
                     ->openUrlInNewTab(),
-      
+                Action::make("viewDTR")
+                    ->label("View DTR")
+                    ->icon("heroicon-o-calendar-days")
+                    ->color("info")
+                    ->url(fn($record): string => ViewUserDTR::getUrl([
+                        'biometric_id' => $record->biometric_id,
+                        'external_employee_id' => $record->id,
+                        'employee_name' => $record->first_name . ' ' . $record->last_name
+                    ]))
+                    ->openUrlInNewTab(),
+
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

@@ -15,6 +15,7 @@ class Administrator extends AuthenticatableUser
         'name',
         'email',
         'password',
+        'role'
     ];
 
     protected $hidden = [
