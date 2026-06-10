@@ -47,7 +47,7 @@ class AdministratorDTRView extends TableWidget
 
     public function getTableHeading(): string|Htmlable|null
     {
-        return $this->employee_name ? new HtmlString("<div style='text-align: right; font-weight: 600; font-size: 1.1rem; color: #374151;'>DTR - {$this->employee_name}</div>") : "";
+        return $this->employee_name ? new HtmlString("<div style='text-align: right; font-weight: 600; font-size: 1.1rem; color: inherit;'>DTR - {$this->employee_name}</div>") : "";
     }
 
     public function getColumnSpan(): int|string|array

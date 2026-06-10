@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as AuthenticatableUser;
+use Illuminate\Support\Facades\Hash;
 
 class Administrator extends AuthenticatableUser
 {
@@ -22,4 +23,11 @@ class Administrator extends AuthenticatableUser
         'password',
         'remember_token',
     ];
+
+    public function setPasswordAttribute($value)
+    {
+        if ($value) {
+            $this->attributes['password'] = Hash::make($value);
+        }
+    }
 }

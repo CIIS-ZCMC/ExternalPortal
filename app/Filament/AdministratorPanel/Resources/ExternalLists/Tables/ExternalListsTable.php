@@ -196,7 +196,8 @@ class ExternalListsTable
                             ->success()
                             ->send();
                     })
-                ]),
+                ])
+                ->visible(fn() => auth('administrator')->user()->role === 1),
                 Action::make("Print_DTR")
                     ->label("Print DTR")
                     ->icon("heroicon-o-printer")
