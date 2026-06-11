@@ -16,6 +16,7 @@ class Administrator extends AuthenticatableUser
         'name',
         'email',
         'password',
+        'username',
         'role'
     ];
 
