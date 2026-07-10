@@ -15,6 +15,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'dtr_api_url' => env('DTR_API_URL', 'http://192.168.36.49:8000'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

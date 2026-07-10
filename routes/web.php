@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MailController;
 use App\Http\Controllers\GoogleController;
@@ -40,3 +43,31 @@ Route::controller(GoogleController::class)->group(function () {
     Route::get("/auth/google/callback", "handleGoogleCallback")->name("auth.google.callback");
     Route::get("/notFound", "notFound")->name("google.notFound");
 });
+
+Route::get('/dtr/download/{token}', function ($token) {
+    $payload = Cache::get('dtr_download_' . $token);
+
+    if (!$payload) {
+        abort(403, 'Invalid or expired request.');
+    }
+
+    $biometric_id = $payload['biometric_id'] ?? null;
+    $year = $payload['year'] ?? null;
+    $month = $payload['month'] ?? null;
+
+    if (!$biometric_id || !$year || !$month) {
+        abort(403, 'Invalid request.');
+    }
+
+    $url = config('app.dtr_api_url') . "/api/dtr/download/{$biometric_id}/{$year}/{$month}";
+
+    $response = Http::get($url);
+
+    if (!$response->successful()) {
+        abort(404, 'DTR report not found.');
+    }
+
+    return response($response->body(), 200, [
+        'Content-Type' => $response->header('Content-Type') ?? 'application/octet-stream',
+    ]);
+})->name('dtr.download');
