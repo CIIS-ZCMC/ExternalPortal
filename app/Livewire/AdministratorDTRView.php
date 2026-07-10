@@ -35,7 +35,7 @@ use Filament\Notifications\Notification;
 class AdministratorDTRView extends TableWidget
 {
 
-    protected $listeners = ['applyFilter' => 'ApplyFilter'];
+    protected $listeners = ['applyFilter' => 'ApplyFilter', 'refresh' => '$refresh'];
 
     public int $month;
     public int $year;
@@ -71,6 +71,8 @@ class AdministratorDTRView extends TableWidget
     public function refreshDtr()
     {
         Http::get(config('app.dtr_api_url') . "/api/dtr/json/{$this->biometric_id}/{$this->year}/{$this->month}?refresh=1");
+
+        $this->dispatch('refresh');
     }
 
     public function createSchedule($data)
@@ -93,6 +95,10 @@ class AdministratorDTRView extends TableWidget
             ->title($schedule->wasRecentlyCreated ? 'Schedule created successfully' : 'Schedule updated successfully')
             ->success()
             ->send();
+        $this->refreshDtr();
+       
+         $this->js('window.location.reload();');
+
     }
 
     public function getDtrRecords()

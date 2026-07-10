@@ -43,7 +43,7 @@ class DTRView extends TableWidget
 {
 
 
-    protected $listeners = ['applyFilter' => 'ApplyFilter'];
+    protected $listeners = ['applyFilter' => 'ApplyFilter', 'refresh' => '$refresh'];
 
     public int $month;
     public int $year;
@@ -76,6 +76,8 @@ class DTRView extends TableWidget
     {
         $biometric_id = Auth::user()->biometric_id;
         Http::get(config('app.dtr_api_url') . "/api/dtr/json/{$biometric_id}/{$this->year}/{$this->month}?refresh=1");
+
+        $this->dispatch('refresh');
     }
 
     public function createSchedule($data)
@@ -100,6 +102,10 @@ class DTRView extends TableWidget
             ->title($schedule->wasRecentlyCreated ? 'Schedule created successfully' : 'Schedule updated successfully')
             ->success()
             ->send();
+
+        $this->refreshDtr();
+       
+         $this->js('window.location.reload();');
     }
 
     public function getDtrRecords()
