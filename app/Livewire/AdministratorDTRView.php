@@ -30,6 +30,7 @@ use App\Models\ExternalEmployeeSchedule;
 use App\Models\PortalSetting;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Notifications\Notification;
+use App\Helpers\DtrToken;
 
 
 class AdministratorDTRView extends TableWidget
@@ -70,7 +71,7 @@ class AdministratorDTRView extends TableWidget
 
     public function refreshDtr()
     {
-        Http::get(config('app.dtr_api_url') . "/api/dtr/json/{$this->biometric_id}/{$this->year}/{$this->month}?refresh=1");
+        Http::get(config('app.dtr_api_url') . "/api/dtr/json/{$this->biometric_id}/{$this->year}/{$this->month}?refresh=1&token=" . DtrToken::generate());
 
         $this->dispatch('refresh');
     }
@@ -96,14 +97,11 @@ class AdministratorDTRView extends TableWidget
             ->success()
             ->send();
         $this->refreshDtr();
-       
-         $this->js('window.location.reload();');
-
     }
 
     public function getDtrRecords()
     {
-        $url = config('app.dtr_api_url') . "/api/dtr/json/{$this->biometric_id}/{$this->year}/{$this->month}";
+        $url = config('app.dtr_api_url') . "/api/dtr/json/{$this->biometric_id}/{$this->year}/{$this->month}?token=" . DtrToken::generate();
 
         $response = Http::get($url);
 
@@ -201,7 +199,9 @@ class AdministratorDTRView extends TableWidget
                     ->icon(Heroicon::CalendarDays)
                     ->hidden(fn() => $this->getDtrRecords()->count() == 0)
                     ->action(function () {
-                        $token = Str::random(16);
+
+                    $token = DtrToken::generate();
+                      
 
                         CacheFacade::put('dtr_download_' . $token, [
                             'biometric_id' => $this->biometric_id,

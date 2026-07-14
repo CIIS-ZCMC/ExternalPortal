@@ -15,7 +15,8 @@ Route::get('/', function () {
 Route::get("/portal/login", [AuthController::class, 'loginPage'])->name('portal.login');
 
 Route::get("/portal/register", [AuthController::class, 'registerPage'])->name('portal.register');
-Route::post("login", [AuthController::class, 'login'])->name('login');
+Route::get("login", fn() => redirect()->route('portal.login'))->name('login');
+Route::post("login", [AuthController::class, 'login'])->name('login.submit');
 Route::post("register", [AuthController::class, 'register'])->name('register');
 
 Route::get("/portal/forgot-password", [AuthController::class, 'forgotPasswordPage'])->name('portal.forgotPassword');
@@ -59,7 +60,7 @@ Route::get('/dtr/download/{token}', function ($token) {
         abort(403, 'Invalid request.');
     }
 
-    $url = config('app.dtr_api_url') . "/api/dtr/download/{$biometric_id}/{$year}/{$month}";
+    $url = config('app.dtr_api_url') . "/api/dtr/download/{$biometric_id}/{$year}/{$month}?token=" . \App\Helpers\DtrToken::generate();
 
     $response = Http::get($url);
 

@@ -4,14 +4,18 @@
             const url = event.detail[0].url;
             const width = window.screen.width * 0.45;
             const height = window.screen.height * 1;
-            const left = "500px";
-            const top = "500px";
-            window.open(url, "_blank");
-            // window.open(
-            //     url,
-            //     "_blank",
-            //     `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no`
-            // );
+
+            const popup = window.open('', '_blank', 'width=' + width + ',height=' + height + ',scrollbars=yes,resizable=yes');
+            popup.document.title = 'DTR Report';
+            popup.document.body.style.margin = '0';
+            popup.document.body.style.padding = '0';
+            popup.document.body.style.overflow = 'hidden';
+            const iframe = popup.document.createElement('iframe');
+            iframe.src = url;
+            iframe.style.width = '100%';
+            iframe.style.height = '100vh';
+            iframe.style.border = 'none';
+            popup.document.body.appendChild(iframe);
         });
     </script>
 

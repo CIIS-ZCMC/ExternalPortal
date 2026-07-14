@@ -37,6 +37,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Tables\Columns\IconColumn;
 use Illuminate\Support\Facades\Cache;
 use Filament\Notifications\Notification;
+use App\Helpers\DtrToken;
 
 
 class DTRView extends TableWidget
@@ -75,7 +76,7 @@ class DTRView extends TableWidget
     public function refreshDtr()
     {
         $biometric_id = Auth::user()->biometric_id;
-        Http::get(config('app.dtr_api_url') . "/api/dtr/json/{$biometric_id}/{$this->year}/{$this->month}?refresh=1");
+        Http::get(config('app.dtr_api_url') . "/api/dtr/json/{$biometric_id}/{$this->year}/{$this->month}?refresh=1&token=" . DtrToken::generate());
 
         $this->dispatch('refresh');
     }
@@ -104,15 +105,13 @@ class DTRView extends TableWidget
             ->send();
 
         $this->refreshDtr();
-       
-         $this->js('window.location.reload();');
     }
 
     public function getDtrRecords()
     {
         $biometric_id = Auth::user()->biometric_id;
 
-        $response = Http::get(config('app.dtr_api_url') . "/api/dtr/json/{$biometric_id}/{$this->year}/{$this->month}");
+        $response = Http::get(config('app.dtr_api_url') . "/api/dtr/json/{$biometric_id}/{$this->year}/{$this->month}?token=" . DtrToken::generate());
 
         if (!$response->successful()) {
             return collect([]);

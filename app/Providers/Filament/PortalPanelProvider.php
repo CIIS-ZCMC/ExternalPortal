@@ -29,7 +29,7 @@ class PortalPanelProvider extends PanelProvider
             ->default()
             ->id('portal')
             ->path('portal')
-            ->login(fn() => redirect()->route('login'))
+            ->login(fn() => redirect()->route('portal.login'))
 
             ->colors([
                 'primary' => Color::Green,
