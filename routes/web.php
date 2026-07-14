@@ -20,7 +20,7 @@ Route::post("login", [AuthController::class, 'login'])->name('login.submit');
 Route::post("register", [AuthController::class, 'register'])->name('register');
 
 Route::get("/portal/forgot-password", [AuthController::class, 'forgotPasswordPage'])->name('portal.forgotPassword');
-Route::post("/portal/forgot-password", [MailController::class, 'sendResetPassword'])->name('portal.forgotPassword');
+Route::post("/portal/forgot-password", [MailController::class, 'sendResetPassword'])->name('portal.forgotPassword.submit');
 Route::get("/portal/reset-password", [AuthController::class, 'resetPasswordPage'])->name('portal.resetPassword');
 
 Route::post("/portal/save-password", [AuthController::class, 'savePassword'])->name('portal.savePassword');
