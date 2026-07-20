@@ -72,3 +72,20 @@ Route::get('/dtr/download/{token}', function ($token) {
         'Content-Type' => $response->header('Content-Type') ?? 'application/octet-stream',
     ]);
 })->name('dtr.download');
+
+Route::get('/test-email', function () {
+    $mail = new \App\Http\Mailer\MailConfig();
+
+    $result = $mail->send([
+        'To_receiver' => 'reenjie17@gmail.com',
+        'Receiver_Name' => 'Test User',
+        'Subject' => 'Test Email from External Portal',
+        'Body' => '<h3>Hello!</h3><p>This is a test email from the ZCMC External Portal.</p>',
+    ]);
+
+    if ($result === true) {
+        return response()->json(['success' => true, 'message' => 'Email sent successfully.']);
+    }
+
+    return response()->json(['success' => false, 'message' => 'Email failed to send.', 'error' => $result]);
+});

@@ -7,6 +7,7 @@ use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\OAuth;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
+use Illuminate\Support\Facades\Log;
 
 class MailConfig
 {
@@ -59,14 +60,26 @@ class MailConfig
             $mail->Body = $data['Body'];
             $mail->AltBody = 'This is a plain text message body';
             if ($mail->send()) {
+                Log::info('Email sent successfully', [
+                    'to' => $data['To_receiver'],
+                    'subject' => $data['Subject'],
+                ]);
                 return true;
             } else {
+                Log::error('Email failed to send', [
+                    'to' => $data['To_receiver'],
+                    'subject' => $data['Subject'],
+                    'error' => $mail->ErrorInfo,
+                ]);
                 return false;
             }
         } catch (\Throwable $th) {
+            Log::error('Email sending exception', [
+                'to' => $data['To_receiver'] ?? 'unknown',
+                'subject' => $data['Subject'] ?? 'unknown',
+                'error' => $th->getMessage(),
+            ]);
             return $th;
-
-            return false;
         }
     }
 }
