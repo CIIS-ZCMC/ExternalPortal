@@ -15,7 +15,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
-    'dtr_api_url' => env('DTR_API_URL', 'http://192.168.36.49:8000'),
+    'dtr_api_url' => env('DTR_API_URL', 'https://dtr-service.zcmc.online'),
+    'access_token'=>env('DTR_ACCESS_TOKEN','DTRtoken'),
 
     /*
     |--------------------------------------------------------------------------

@@ -102,7 +102,7 @@ class AdministratorDTRView extends TableWidget
     public function getDtrRecords()
     {
         $url = config('app.dtr_api_url') . "/api/dtr/json/{$this->biometric_id}/{$this->year}/{$this->month}?token=" . DtrToken::generate();
-
+     
         $response = Http::get($url);
 
         if (!$response->successful()) {
