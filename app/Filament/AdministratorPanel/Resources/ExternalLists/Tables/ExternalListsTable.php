@@ -4,26 +4,35 @@ namespace App\Filament\AdministratorPanel\Resources\ExternalLists\Tables;
 
 use App\Filament\AdministratorPanel\Pages\ViewSchedule;
 use App\Filament\AdministratorPanel\Pages\ViewUserDTR;
+use App\Helpers\DtrToken;
 use App\Http\Controllers\DeviceController;
 use App\Models\Biometrics;
+use App\Models\DeviceLogs;
 use App\Models\Devices;
+use App\Models\DTR;
+use App\Models\ExternalEmployeeSchedule;
+use Carbon\Carbon;
+use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\TextInput;
-use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Table;
-use App\Models\DTR;
-use Filament\Actions\Action;
-use Filament\Actions\BulkAction;
+use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Section;
 use Filament\Support\Enums\Alignment;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\RecordActionsPosition;
+use Filament\Tables\Table;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 
 class ExternalListsTable
 {
@@ -131,6 +140,243 @@ class ExternalListsTable
             ->recordActions([
 
                 ActionGroup::make([
+                    Action::make('time_adjustments')
+                        ->label('Time Adjustments')
+                        ->icon('heroicon-o-clock')
+                        ->color('primary')
+                        ->modalHeading(fn($record) => 'Time Adjustments - ' . $record->name . ($record->biometric_id ? " (Biometric ID: {$record->biometric_id})" : ''))
+                        ->modalDescription('Create a schedule and corresponding device logs for this employee on a specific date.')
+                        ->modalWidth('2xl')
+                        ->modalSubmitActionLabel('Save Adjustment')
+                        ->mountUsing(function ($form, $record) {
+                            $form->fill([
+                                'dtr_date' => now()->format('Y-m-d'),
+                                'is_shifting' => false,
+                                'is_office_hours' => false,
+                                'log_first_in' => true,
+                                'log_first_out' => true,
+                                'log_second_in' => true,
+                                'log_second_out' => true,
+                            ]);
+                        })
+                        ->schema([
+                            Section::make('Date & Schedule Configuration')
+                                ->schema([
+                                    DatePicker::make('dtr_date')
+                                        ->label('Schedule Date')
+                                        ->required()
+                                        ->default(now()->format('Y-m-d')),
+                                    Checkbox::make('is_shifting')
+                                        ->label('Is Shifting')
+                                        ->live()
+                                        ->afterStateUpdated(function ($set, $state) {
+                                            if ($state) {
+                                                $set('is_office_hours', false);
+                                                $set('first_out', null);
+                                                $set('second_in', null);
+                                            }
+                                        })
+                                        ->columnSpan(1),
+                                    Checkbox::make('is_office_hours')
+                                        ->label('Office Hours (8:00 AM - 12:00 PM, 1:00 PM - 5:00 PM)')
+                                        ->disabled(fn($get) => (bool)$get('is_shifting'))
+                                        ->live()
+                                        ->afterStateUpdated(function ($set, $get) {
+                                            if ($get('is_office_hours')) {
+                                                $set('first_in', '08:00:00');
+                                                $set('first_out', '12:00:00');
+                                                $set('second_in', '13:00:00');
+                                                $set('second_out', '17:00:00');
+                                            } else {
+                                                $set('first_in', null);
+                                                $set('first_out', null);
+                                                $set('second_in', null);
+                                                $set('second_out', null);
+                                            }
+                                        })
+                                        ->columnSpan(1),
+                                    Select::make('time_shift')
+                                        ->label('Shift Preset')
+                                        ->disabled(fn($get) => !(bool)$get('is_shifting'))
+                                        ->options([
+                                            '1' => '10:00 AM - 06:00 PM',
+                                            '2' => '02:00 PM - 10:00 PM',
+                                            '3' => '10:00 PM - 06:00 AM',
+                                            '4' => '06:00 AM - 02:00 PM',
+                                            '5' => '08:00 AM - 04:00 PM',
+                                            '6' => '08:00 AM - 08:00 AM',
+                                            '7' => '08:00 AM - 12:00 PM',
+                                            '8' => '01:00 PM - 05:00 PM',
+                                            '9' => '07:00 AM - 07:00 AM',
+                                            '10' => '03:00 PM - 07:00 AM',
+                                            '11' => '06:00 AM - 10:00 PM',
+                                        ])
+                                        ->live()
+                                        ->afterStateUpdated(function ($set, $get) {
+                                            if ($get('time_shift')) {
+                                                $shiftMap = [
+                                                    '1' => ['10:00:00', '18:00:00'],
+                                                    '2' => ['14:00:00', '22:00:00'],
+                                                    '3' => ['22:00:00', '06:00:00'],
+                                                    '4' => ['06:00:00', '14:00:00'],
+                                                    '5' => ['08:00:00', '16:00:00'],
+                                                    '6' => ['08:00:00', '08:00:00'],
+                                                    '7' => ['08:00:00', '12:00:00'],
+                                                    '8' => ['13:00:00', '17:00:00'],
+                                                    '9' => ['07:00:00', '07:00:00'],
+                                                    '10' => ['15:00:00', '23:00:00'],
+                                                    '11' => ['06:00:00', '22:00:00'],
+                                                ];
+                                                $times = $shiftMap[$get('time_shift')] ?? ['08:00:00', '16:00:00'];
+                                                $set('first_in', $times[0]);
+                                                $set('second_out', $times[1]);
+                                                $set('first_out', null);
+                                                $set('second_in', null);
+                                            }
+                                        })
+                                        ->columnSpan(2),
+                                ])
+                                ->columns(2),
+                            Section::make('Time Entries')
+                                ->schema([
+                                    TimePicker::make('first_in')
+                                        ->label(fn($get) => $get('is_shifting') ? 'First In (Shift Start)' : 'First In (AM In)')
+                                        ->required(),
+                                    TimePicker::make('first_out')
+                                        ->label('First Out (Lunch Out)')
+                                        ->hidden(fn($get) => (bool)$get('is_shifting'))
+                                        ->required(fn($get) => !(bool)$get('is_shifting')),
+                                    TimePicker::make('second_in')
+                                        ->label('Second In (Lunch In)')
+                                        ->hidden(fn($get) => (bool)$get('is_shifting'))
+                                        ->required(fn($get) => !(bool)$get('is_shifting')),
+                                    TimePicker::make('second_out')
+                                        ->label(fn($get) => $get('is_shifting') ? 'Second Out (Shift End)' : 'Second Out (PM Out)')
+                                        ->required(),
+                                ])
+                                ->columns(2),
+                            Section::make('Device Logs Creation')
+                                ->description('Select which punches to record as device logs (Device Name: Time Adjustment)')
+                                ->schema([
+                                    Checkbox::make('log_first_in')
+                                        ->label('Create Device Log for First In')
+                                        ->default(true),
+                                    Checkbox::make('log_first_out')
+                                        ->label('Create Device Log for First Out')
+                                        ->default(true)
+                                        ->hidden(fn($get) => (bool)$get('is_shifting')),
+                                    Checkbox::make('log_second_in')
+                                        ->label('Create Device Log for Second In')
+                                        ->default(true)
+                                        ->hidden(fn($get) => (bool)$get('is_shifting')),
+                                    Checkbox::make('log_second_out')
+                                        ->label('Create Device Log for Second Out')
+                                        ->default(true),
+                                ])
+                                ->columns(2),
+                        ])
+                        ->action(function ($record, array $data) {
+                            if (!$record->biometric_id) {
+                                Notification::make()
+                                    ->title('Cannot Create Device Logs')
+                                    ->body('This employee does not have a Biometric ID assigned. Please assign a Biometric ID first.')
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+
+                            $isShifting = (bool)($data['is_shifting'] ?? false);
+                            $dtrDate = $data['dtr_date'];
+
+                            // 1. Create or Update External Employee Schedule
+                            ExternalEmployeeSchedule::updateOrCreate(
+                                [
+                                    'external_employee_id' => $record->id,
+                                    'dtr_date' => $dtrDate,
+                                ],
+                                [
+                                    'is_shifting' => $isShifting,
+                                    'first_in' => $data['first_in'],
+                                    'first_out' => $isShifting ? null : ($data['first_out'] ?? null),
+                                    'second_in' => $isShifting ? null : ($data['second_in'] ?? null),
+                                    'second_out' => $data['second_out'],
+                                ]
+                            );
+
+                            // 2. Create Device Logs
+                            $logsToCreate = [];
+
+                            if (!empty($data['log_first_in']) && !empty($data['first_in'])) {
+                                $logsToCreate[] = [
+                                    'time' => $data['first_in'],
+                                    'date' => $dtrDate,
+                                ];
+                            }
+
+                            if (!$isShifting && !empty($data['log_first_out']) && !empty($data['first_out'])) {
+                                $logsToCreate[] = [
+                                    'time' => $data['first_out'],
+                                    'date' => $dtrDate,
+                                ];
+                            }
+
+                            if (!$isShifting && !empty($data['log_second_in']) && !empty($data['second_in'])) {
+                                $logsToCreate[] = [
+                                    'time' => $data['second_in'],
+                                    'date' => $dtrDate,
+                                ];
+                            }
+
+                            if (!empty($data['log_second_out']) && !empty($data['second_out'])) {
+                                $secondOutDate = $dtrDate;
+                                if ($isShifting && !empty($data['first_in']) && $data['second_out'] < $data['first_in']) {
+                                    $secondOutDate = Carbon::parse($dtrDate)->addDay()->format('Y-m-d');
+                                }
+                                $logsToCreate[] = [
+                                    'time' => $data['second_out'],
+                                    'date' => $secondOutDate,
+                                ];
+                            }
+
+                            $createdLogsCount = 0;
+                            foreach ($logsToCreate as $log) {
+                                $timeString = strlen($log['time']) === 5 ? $log['time'] . ':00' : $log['time'];
+                                $dateTime = "{$log['date']} {$timeString}";
+
+                                DeviceLogs::firstOrCreate(
+                                    [
+                                        'biometric_id' => (string)$record->biometric_id,
+                                        'date_time' => $dateTime,
+                                    ],
+                                    [
+                                        'name' => $record->name,
+                                        'dtr_date' => $log['date'],
+                                        'status' => 255,
+                                        'is_Shifting' => $isShifting ? 1 : 0,
+                                        'schedule' => null,
+                                        'active' => 1,
+                                        'device_name' => 'Time Adjustment',
+                                    ]
+                                );
+                                $createdLogsCount++;
+                            }
+
+                            // 3. Attempt DTR refresh if API configured
+                            try {
+                                $dateObj = Carbon::parse($dtrDate);
+                                if (config('app.dtr_api_url')) {
+                                    Http::timeout(3)->get(config('app.dtr_api_url') . "/api/dtr/json/{$record->biometric_id}/{$dateObj->year}/{$dateObj->month}?refresh=1&token=" . DtrToken::generate());
+                                }
+                            } catch (\Throwable $e) {
+                                // Silently continue if DTR API is unreachable
+                            }
+
+                            Notification::make()
+                                ->title('Time Adjustment Saved')
+                                ->body("Schedule and {$createdLogsCount} device log(s) processed for {$record->name}.")
+                                ->success()
+                                ->send();
+                        }),
                     Action::make('deactivate')
                     ->label('Deactivate')
                     ->icon('heroicon-o-user-minus')
