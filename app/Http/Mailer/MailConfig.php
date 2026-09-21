@@ -20,11 +20,11 @@ class MailConfig
 
     public function __construct()
     {
-        $this->client_id = env("GOOGLE_API_CLIENT_ID");
-        $this->client_secret = env("GOOGLE_API_CLIENT_SECRET");
-        $this->token = env("SYSTEM_EMAIL_TOKEN");
-        $this->sys_email = "ciis.zcmc@gmail.com";
-        $this->from_System = "ZCMC Portal";
+        $this->client_id = config("services.google_mailer.client_id") ?? env("GOOGLE_API_CLIENT_ID");
+        $this->client_secret = config("services.google_mailer.client_secret") ?? env("GOOGLE_API_CLIENT_SECRET");
+        $this->token = config("services.google_mailer.system_token") ?? env("SYSTEM_EMAIL_TOKEN");
+        $this->sys_email = config("services.google_mailer.system_email") ?? "ciis.zcmc@gmail.com";
+        $this->from_System = config("services.google_mailer.from_name") ?? "ZCMC Portal";
         $this->provider = new Google([
             'clientId' => $this->client_id,
             'clientSecret' => $this->client_secret,

@@ -18,9 +18,17 @@ class DevicesResource extends Resource
 {
     protected static ?string $model = Devices::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCpuChip;
+
+    protected static ?string $navigationLabel = 'Biometric Devices';
+
+    protected static ?string $modelLabel = 'Biometric Device';
+
+    protected static ?string $pluralModelLabel = 'Biometric Devices';
+
     protected static ?int $navigationSort = 2;
-        protected static ?string $recordTitleAttribute = 'Devices';
+
+    protected static ?string $recordTitleAttribute = 'device_name';
 
 
     public static function canViewAny(): bool

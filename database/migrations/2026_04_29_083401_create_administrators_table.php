@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('administrators', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->string('username')->unique();
-            $table->string('password');
-            $table->integer('role')->default(1)->comment('1: administrator, 2: admin');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('administrators')) {
+            Schema::create('administrators', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->string('email')->unique();
+                $table->string('username')->unique();
+                $table->string('password');
+                $table->integer('role')->default(1)->comment('1: administrator, 2: admin');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

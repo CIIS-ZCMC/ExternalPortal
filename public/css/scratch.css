@@ -1,0 +1,435 @@
+/* ==========================================================================
+   ZCMC External Portal - Scratch CSS
+   Comprehensive sizing constraints for icons, logos, and UI components
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Brand Logo & Header Constraints (Compact, Professional Sizing)
+   -------------------------------------------------------------------------- */
+.fi-logo,
+.fi-sidebar-header .fi-logo,
+.fi-topbar .fi-logo {
+    height: 1.85rem !important;
+    max-height: 1.85rem !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.fi-logo img,
+.fi-sidebar-header .fi-logo img,
+.fi-topbar .fi-logo img,
+.fi-sidebar-header img,
+.fi-topbar img,
+.zcmc-brand-seal {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+    min-width: 1.5rem !important;
+    min-height: 1.5rem !important;
+    max-width: 1.5rem !important;
+    max-height: 1.5rem !important;
+    object-fit: contain !important;
+    flex-shrink: 0 !important;
+    display: block !important;
+}
+
+.zcmc-brand-logo {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    height: 1.85rem !important;
+    max-height: 1.85rem !important;
+    user-select: none !important;
+}
+
+.zcmc-brand-seal-wrapper {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 1.75rem !important;
+    height: 1.75rem !important;
+    min-width: 1.75rem !important;
+    min-height: 1.75rem !important;
+    max-width: 1.75rem !important;
+    max-height: 1.75rem !important;
+    overflow: hidden !important;
+    border-radius: 0.375rem !important;
+    padding: 0.125rem !important;
+    flex-shrink: 0 !important;
+    background-color: #ffffff !important;
+}
+
+.zcmc-brand-text {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+}
+
+.zcmc-brand-title {
+    font-size: 0.8125rem !important; /* ~13px */
+    font-weight: 700 !important;
+    letter-spacing: -0.01em !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+}
+
+.zcmc-brand-subtitle {
+    font-size: 0.625rem !important; /* ~10px */
+    font-weight: 500 !important;
+    letter-spacing: 0.01em !important;
+    opacity: 0.75 !important;
+}
+
+.zcmc-brand-tag {
+    font-size: 0.5625rem !important; /* ~9px */
+    font-weight: 700 !important;
+    padding: 0.08rem 0.3rem !important;
+    border-radius: 0.25rem !important;
+    line-height: 1 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+}
+
+/* Sidebar Header Compact Padding */
+.fi-sidebar-header {
+    padding-top: 0.625rem !important;
+    padding-bottom: 0.625rem !important;
+    min-height: 3.5rem !important;
+    align-items: center !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. Strict Icon & SVG Sizing Protection (Never shrink buttons or wrappers)
+   -------------------------------------------------------------------------- */
+/* Universal SVG containment */
+.fi-body svg,
+.fi-panel-portal svg,
+.fi-panel-administratorPanel svg {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Default icon sizing for all standard Filament icons (ONLY target SVG elements) */
+svg.fi-icon:not(.fi-loading-indicator):not([class*="loading-indicator"]),
+.fi-icon:not(.fi-loading-indicator) > svg:not(.fi-loading-indicator),
+.fi-sidebar-item-icon > svg:not(.fi-loading-indicator),
+svg.fi-sidebar-item-icon:not(.fi-loading-indicator),
+.fi-sidebar-nav svg:not(.fi-loading-indicator),
+.fi-sidebar-header svg:not(.fi-loading-indicator),
+.fi-btn svg:not(.fi-loading-indicator):not([class*="loading-indicator"]),
+.fi-btn-icon:not(.fi-loading-indicator):not([class*="loading-indicator"]),
+svg.fi-btn-icon:not(.fi-loading-indicator):not([class*="loading-indicator"]),
+.fi-icon-btn > svg:not(.fi-loading-indicator):not([class*="loading-indicator"]),
+svg.fi-icon-btn:not(.fi-loading-indicator):not([class*="loading-indicator"]),
+.fi-ta-cell svg:not(.fi-loading-indicator):not([class*="loading-indicator"]),
+.fi-ta-icon > svg:not(.fi-loading-indicator):not([class*="loading-indicator"]),
+.fi-dropdown-list-item-icon > svg:not(.fi-loading-indicator),
+.fi-modal-icon > svg:not(.fi-loading-indicator),
+.fi-section svg:not(.fi-loading-indicator) {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+    max-width: 1.25rem !important;
+    max-height: 1.25rem !important;
+    min-width: 1.25rem !important;
+    min-height: 1.25rem !important;
+    flex-shrink: 0 !important;
+    display: inline-block;
+    vertical-align: middle !important;
+}
+
+/* Specific Filament Size Enums (ONLY on SVG elements) */
+svg.fi-size-xs:not(.fi-loading-indicator),
+.fi-icon.fi-size-xs > svg:not(.fi-loading-indicator),
+svg.fi-icon.fi-size-xs:not(.fi-loading-indicator) {
+    width: 0.75rem !important; height: 0.75rem !important;
+    max-width: 0.75rem !important; max-height: 0.75rem !important;
+    min-width: 0.75rem !important; min-height: 0.75rem !important;
+}
+
+svg.fi-size-sm:not(.fi-loading-indicator),
+.fi-icon.fi-size-sm > svg:not(.fi-loading-indicator),
+svg.fi-icon.fi-size-sm:not(.fi-loading-indicator) {
+    width: 1rem !important; height: 1rem !important;
+    max-width: 1rem !important; max-height: 1rem !important;
+    min-width: 1rem !important; min-height: 1rem !important;
+}
+
+svg.fi-size-md:not(.fi-loading-indicator),
+.fi-icon.fi-size-md > svg:not(.fi-loading-indicator),
+svg.fi-icon.fi-size-md:not(.fi-loading-indicator) {
+    width: 1.25rem !important; height: 1.25rem !important;
+    max-width: 1.25rem !important; max-height: 1.25rem !important;
+    min-width: 1.25rem !important; min-height: 1.25rem !important;
+}
+
+svg.fi-size-lg:not(.fi-loading-indicator),
+.fi-icon.fi-size-lg > svg:not(.fi-loading-indicator),
+svg.fi-icon.fi-size-lg:not(.fi-loading-indicator) {
+    width: 1.35rem !important; height: 1.35rem !important;
+    max-width: 1.35rem !important; max-height: 1.35rem !important;
+    min-width: 1.35rem !important; min-height: 1.35rem !important;
+}
+
+svg.fi-size-xl:not(.fi-loading-indicator),
+.fi-icon.fi-size-xl > svg:not(.fi-loading-indicator),
+svg.fi-icon.fi-size-xl:not(.fi-loading-indicator) {
+    width: 1.5rem !important; height: 1.5rem !important;
+    max-width: 1.5rem !important; max-height: 1.5rem !important;
+    min-width: 1.5rem !important; min-height: 1.5rem !important;
+}
+
+svg.fi-size-2xl:not(.fi-loading-indicator),
+.fi-icon.fi-size-2xl > svg:not(.fi-loading-indicator),
+svg.fi-icon.fi-size-2xl:not(.fi-loading-indicator) {
+    width: 2rem !important; height: 2rem !important;
+    max-width: 2rem !important; max-height: 2rem !important;
+    min-width: 2rem !important; min-height: 2rem !important;
+}
+
+/* Table Cell Schedule Column Icons */
+.fi-ta-cell .fi-icon > svg:not(.fi-loading-indicator),
+.fi-ta-cell svg.fi-icon:not(.fi-loading-indicator) {
+    width: 1.125rem !important;
+    height: 1.125rem !important;
+    max-width: 1.125rem !important;
+    max-height: 1.125rem !important;
+    min-width: 1.125rem !important;
+    min-height: 1.125rem !important;
+}
+
+/* Empty State Table Icon */
+.fi-ta-empty-state-icon-bg svg,
+.fi-ta-empty-state svg {
+    width: 2.25rem !important;
+    height: 2.25rem !important;
+    max-width: 2.25rem !important;
+    max-height: 2.25rem !important;
+    min-width: 2.25rem !important;
+    min-height: 2.25rem !important;
+}
+
+/* Badges, Sorting, Pagination, and Breadcrumb Icons */
+.fi-badge > svg:not(.fi-loading-indicator),
+.fi-badge-icon > svg:not(.fi-loading-indicator),
+svg.fi-badge-icon:not(.fi-loading-indicator),
+.fi-ta-header-cell-sort-icon > svg:not(.fi-loading-indicator),
+svg.fi-ta-header-cell-sort-icon:not(.fi-loading-indicator),
+.fi-breadcrumbs svg,
+.fi-pagination-item svg {
+    width: 0.875rem !important;
+    height: 0.875rem !important;
+    max-width: 0.875rem !important;
+    max-height: 0.875rem !important;
+    min-width: 0.875rem !important;
+    min-height: 0.875rem !important;
+}
+
+/* Form Input Prefix/Suffix Icons & Table Filter/Search */
+.fi-input-wrp-icon > svg:not(.fi-loading-indicator),
+svg.fi-input-wrp-icon:not(.fi-loading-indicator),
+.fi-ta-filter svg:not(.fi-loading-indicator),
+.fi-ta-search-field svg:not(.fi-loading-indicator) {
+    width: 1.125rem !important;
+    height: 1.125rem !important;
+    max-width: 1.125rem !important;
+    max-height: 1.125rem !important;
+    min-width: 1.125rem !important;
+    min-height: 1.125rem !important;
+}
+
+/* Tailwind utility fallbacks for SVGs */
+svg.w-3 { width: 0.75rem !important; height: 0.75rem !important; }
+svg.w-4 { width: 1rem !important; height: 1rem !important; }
+svg.w-5 { width: 1.25rem !important; height: 1.25rem !important; }
+svg.w-6 { width: 1.5rem !important; height: 1.5rem !important; }
+svg.w-7 { width: 1.75rem !important; height: 1.75rem !important; }
+svg.w-8 { width: 2rem !important; height: 2rem !important; }
+
+/* --------------------------------------------------------------------------
+   3. Table Component Layout Integrity (Protect Buttons, Badges & Actions)
+   -------------------------------------------------------------------------- */
+/* Ensure action buttons and links have natural width, padding, and never overlap */
+.fi-btn {
+    width: auto !important;
+    max-width: none !important;
+    min-height: 2.25rem !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.375rem !important;
+}
+
+.fi-badge {
+    width: auto !important;
+    max-width: none !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+}
+
+/* Table record actions (Manage Schedule, Logs) cleanly side-by-side */
+.fi-ta-actions {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
+}
+
+.fi-ta-actions .fi-link,
+.fi-ta-actions .fi-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.25rem !important;
+    white-space: nowrap !important;
+}
+
+/* Table header toolbar actions */
+.fi-ta-header-actions-ctn {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    flex-wrap: wrap !important;
+}
+
+.fi-ta-header-cell {
+    font-size: 0.7rem !important;
+    letter-spacing: 0.03em !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+}
+
+.fi-ta-cell {
+    font-size: 0.8125rem !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. Header / Topbar Clean-up: Remove Toggle Buttons & Topbar Global Search
+   -------------------------------------------------------------------------- */
+.fi-topbar-open-sidebar-btn,
+.fi-topbar-close-sidebar-btn,
+.fi-topbar-open-collapse-sidebar-btn,
+.fi-topbar-close-collapse-sidebar-btn,
+.fi-topbar-start > .fi-icon-btn,
+.fi-topbar-start > button,
+.fi-topbar > .fi-icon-btn,
+.fi-global-search,
+.fi-global-search-field,
+.fi-topbar .fi-global-search,
+.fi-topbar-end .fi-global-search {
+    display: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. Loading Indicator: Hide When Idle, Display Only When Button/Action Clicked
+   -------------------------------------------------------------------------- */
+/* By default (idle state), all loading indicators are strictly hidden */
+.fi-loading-indicator,
+svg.fi-loading-indicator,
+.fi-icon.fi-loading-indicator,
+.fi-btn .fi-loading-indicator,
+.fi-link .fi-loading-indicator,
+.fi-input-wrp .fi-loading-indicator,
+.fi-input-wrp-prefix .fi-loading-indicator,
+.fi-input-wrp-suffix .fi-loading-indicator {
+    display: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    max-width: 1.125rem;
+    max-height: 1.125rem;
+    min-width: 1.125rem;
+    min-height: 1.125rem;
+    vertical-align: middle;
+    flex-shrink: 0;
+    animation: fi-spin 1s linear infinite;
+}
+
+/* Livewire active loading state: when an action/button is clicked, Livewire sets inline display */
+.fi-loading-indicator[style*="display: inline"],
+.fi-loading-indicator[style*="display:inline"],
+.fi-loading-indicator[style*="display: block"],
+.fi-loading-indicator[style*="display:block"],
+.fi-loading-indicator[style*="display: flex"],
+.fi-loading-indicator[style*="display:flex"],
+svg.fi-loading-indicator[style*="display: inline"],
+svg.fi-loading-indicator[style*="display:inline"],
+svg.fi-loading-indicator[style*="display: block"],
+svg.fi-loading-indicator[style*="display:block"],
+svg.fi-loading-indicator[style*="display: flex"],
+svg.fi-loading-indicator[style*="display:flex"] {
+    display: inline-block !important;
+    width: 1.125rem !important;
+    height: 1.125rem !important;
+    max-width: 1.125rem !important;
+    max-height: 1.125rem !important;
+    min-width: 1.125rem !important;
+    min-height: 1.125rem !important;
+    vertical-align: middle !important;
+    animation: fi-spin 1s linear infinite !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* When input prefix container is actively displayed by Livewire during request */
+.fi-input-wrp-prefix[style*="display: flex"] .fi-loading-indicator,
+.fi-input-wrp-prefix[style*="display:flex"] .fi-loading-indicator,
+.fi-input-wrp-prefix[style*="display: inline"] .fi-loading-indicator,
+.fi-input-wrp-prefix[style*="display:inline"] .fi-loading-indicator {
+    display: inline-block !important;
+    width: 1.125rem !important;
+    height: 1.125rem !important;
+    max-width: 1.125rem !important;
+    max-height: 1.125rem !important;
+    animation: fi-spin 1s linear infinite !important;
+}
+
+/* Filament form processing active state (when submit button is clicked) */
+.fi-processing .fi-loading-indicator,
+.fi-btn.fi-processing .fi-loading-indicator,
+.fi-btn.fi-processing svg.fi-loading-indicator {
+    display: inline-block !important;
+    width: 1.125rem !important;
+    height: 1.125rem !important;
+    max-width: 1.125rem !important;
+    max-height: 1.125rem !important;
+    animation: fi-spin 1s linear infinite !important;
+}
+
+@keyframes fi-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* --------------------------------------------------------------------------
+   6. Section Header Layout Protection
+   -------------------------------------------------------------------------- */
+.fi-section-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0.75rem !important;
+}
+
+.fi-section-header-text-ctn {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+}
+
+.fi-section-header-heading {
+    white-space: nowrap !important;
+}
+
+.fi-section-header-after-ctn {
+    margin-inline-start: auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+}
+

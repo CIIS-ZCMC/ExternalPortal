@@ -22,6 +22,27 @@ class ViewUserDTR extends Page
         $this->employee_name = request()->query('employee_name');
     }
 
+    public function getTitle(): string|\Illuminate\Contracts\Support\Htmlable
+    {
+        return $this->employee_name ? "DTR Record: {$this->employee_name}" : 'Employee DTR Record';
+    }
+
+    public function getSubheading(): string|\Illuminate\Contracts\Support\Htmlable|null
+    {
+        return 'Review biometric punch history and generate official printouts.';
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            \Filament\Actions\Action::make('back')
+                ->label('Back to Employee Directory')
+                ->icon('heroicon-o-arrow-left')
+                ->color('gray')
+                ->url(route('filament.administratorPanel.resources.external-lists.index')),
+        ];
+    }
+
     public function getHeaderWidgets(): array
     {
         return [

@@ -19,9 +19,15 @@ class ExternalListsResource extends Resource
 {
     protected static ?string $model = ExternalEmployees::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
 
-    protected static ?string $recordTitleAttribute = 'ExternalEmployees';
+    protected static ?string $navigationLabel = 'External Employees';
+
+    protected static ?string $modelLabel = 'External Employee';
+
+    protected static ?string $pluralModelLabel = 'External Employees';
+
+    protected static ?string $recordTitleAttribute = 'first_name';
 
     protected static ?int $navigationSort = 1;
 

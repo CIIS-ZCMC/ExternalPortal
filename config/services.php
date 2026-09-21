@@ -41,4 +41,12 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    'google_mailer' => [
+        'client_id' => env('GOOGLE_API_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_API_CLIENT_SECRET'),
+        'system_token' => env('SYSTEM_EMAIL_TOKEN'),
+        'system_email' => env('SYSTEM_EMAIL_ADDRESS', 'ciis.zcmc@gmail.com'),
+        'from_name' => env('SYSTEM_EMAIL_FROM_NAME', 'ZCMC Portal'),
+    ],
+
 ];

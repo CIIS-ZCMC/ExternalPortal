@@ -7,6 +7,8 @@ use App\Filament\AdministratorPanel\Pages\ViewUserDTR;
 use App\Helpers\DtrToken;
 use App\Http\Controllers\DeviceController;
 use App\Models\Biometrics;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use App\Models\DeviceLogs;
 use App\Models\Devices;
 use App\Models\DTR;
@@ -42,99 +44,123 @@ class ExternalListsTable
             ->recordUrl(null)
             ->selectable(fn() => auth('administrator')->user()->role === 1)
             ->columns([
-                TextColumn::make("is_registered")
-                    ->label("Is Registered")
-                   
+                TextColumn::make("biometric_id")
+                    ->label("Biometric ID")
                     ->badge()
-                    ->size("10px")
+                    ->color("gray")
+                    ->searchable()
+                    ->sortable()
+                    ->copyable()
+                    ->copyMessage("Biometric ID copied")
+                    ->fontFamily("mono"),
+
+                TextColumn::make("name")
+                    ->label("Employee Name")
+                    ->searchable(['first_name', 'last_name', 'middle_name'])
+                    ->sortable(['last_name', 'first_name'])
+                    ->weight("bold")
+                    ->description(fn($record) => $record->position ?: 'External Personnel'),
+
+                TextColumn::make("agency")
+                    ->label("Agency / Affiliation")
+                    ->searchable()
+                    ->sortable()
+                    ->wrap()
+                    ->toggleable(),
+
+                TextColumn::make("is_registered")
+                    ->label("Biometrics")
+                    ->badge()
                     ->color(function ($record) {
                         $biometric = Biometrics::where("biometric_id", $record->biometric_id)->first();
-                        return $biometric ? ($biometric->biometric === "NOT_YET_REGISTERED" ? "danger" : "success") : "secondary";
+                        return $biometric ? ($biometric->biometric === "NOT_YET_REGISTERED" ? "warning" : "success") : "gray";
                     })
-
+                    ->icon(function ($record) {
+                        $biometric = Biometrics::where("biometric_id", $record->biometric_id)->first();
+                        return $biometric ? ($biometric->biometric === "NOT_YET_REGISTERED" ? "heroicon-o-exclamation-triangle" : "heroicon-o-finger-print") : "heroicon-o-question-mark-circle";
+                    })
                     ->state(function ($record) {
                         $biometric = Biometrics::where("biometric_id", $record->biometric_id)->first();
-                        return $biometric ? ($biometric->biometric === "NOT_YET_REGISTERED" ? "No Biometric Data" : "Registered") : "Not Registered";
+                        return $biometric ? ($biometric->biometric === "NOT_YET_REGISTERED" ? "No Data" : "Registered") : "Not Set";
                     }),
+
                 TextColumn::make("status")
                     ->label("Status")
                     ->searchable()
                     ->sortable()
                     ->badge()
-
-                    ->size("10px")
                     ->color(function ($record) {
                         if ($record->deleted_at) {
                             return "danger";
                         }
-
                         $dtr = DTR::where("biometric_id", $record->biometric_id)->first();
                         return $dtr ? "success" : "danger";
                     })
+                    ->icon(function ($record) {
+                        if ($record->deleted_at) {
+                            return "heroicon-o-x-circle";
+                        }
+                        $dtr = DTR::where("biometric_id", $record->biometric_id)->first();
+                        return $dtr ? "heroicon-o-check-circle" : "heroicon-o-x-circle";
+                    })
                     ->state(function ($record) {
-
                         if ($record->deleted_at) {
                             return "INACTIVE";
                         }
-
                         $dtr = DTR::where("biometric_id", $record->biometric_id)->first();
                         return $dtr ? "ACTIVE" : "INACTIVE";
                     }),
 
-                TextColumn::make("biometric_id")
-                    ->label("Biometric ID")
-                    ->searchable()
+                TextColumn::make("email_verified_at")
+                    ->label("Email Verification")
+                    ->badge()
+                    ->color(fn($state) => $state ? "success" : "warning")
+                    ->icon(fn($state) => $state ? "heroicon-o-check-badge" : "heroicon-o-clock")
+                    ->formatStateUsing(fn($state) => $state ? "VERIFIED" : "UNVERIFIED")
                     ->sortable()
                     ->toggleable(),
-                TextColumn::make("first_name")
-                    ->label("First Name")
-                    ->searchable()
-                    ->sortable()
-                    ->toggleable(),
-                TextColumn::make("last_name")
-                    ->label("Last Name")
-                    ->searchable()
-                    ->sortable()
-                    ->toggleable(),
-                TextColumn::make("middle_name")
-                    ->label("Middle Name")
-                    ->searchable()
-                    ->sortable()
-                    ->toggleable(),
-                TextColumn::make("position")
-                    ->label("Position")
-                    ->searchable()
-                    ->sortable()
-                    ->toggleable(),
+
                 TextColumn::make("email")
-                    ->label("Email")
+                    ->label("Email Address")
                     ->searchable()
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make("contact_number")
                     ->label("Contact Number")
                     ->searchable()
                     ->sortable()
-                    ->toggleable(),
-                TextColumn::make("agency")
-                    ->label("Agency")
-                    ->searchable()
-                    ->sortable()
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make("created_at")
-                    ->label("Created At")
-                    ->since()
+                    ->label("Registered Since")
+                    ->date("M d, Y")
                     ->searchable()
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make("username")
                     ->label("Username")
                     ->searchable()
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                \Filament\Tables\Filters\SelectFilter::make('verification_status')
+                    ->label('Email Verification')
+                    ->options([
+                        'verified' => 'VERIFIED',
+                        'unverified' => 'UNVERIFIED',
+                    ])
+                    ->query(function ($query, array $data) {
+                        if (($data['value'] ?? null) === 'verified') {
+                            return $query->whereNotNull('email_verified_at');
+                        }
+                        if (($data['value'] ?? null) === 'unverified') {
+                            return $query->whereNull('email_verified_at');
+                        }
+                        return $query;
+                    }),
             ])
             ->recordActionsPosition(RecordActionsPosition::BeforeColumns)
             ->recordActions([
@@ -441,48 +467,69 @@ class ExternalListsTable
                             ->body('Email has been updated successfully')
                             ->success()
                             ->send();
-                    })
+                    }),
+                    EditAction::make()
+                        ->label('Edit Profile')
+                        ->icon('heroicon-o-pencil-square'),
                 ])
                 ->visible(fn() => auth('administrator')->user()->role === 1),
                 Action::make("Print_DTR")
                     ->label("Print DTR")
                     ->icon("heroicon-o-printer")
+                    ->color("primary")
                     ->schema([
                         Select::make('month')
+                            ->label('Month')
                             ->options([
-                                '01' => 'January',
-                                '02' => 'February',
-                                '03' => 'March',
-                                '04' => 'April',
-                                '05' => 'May',
-                                '06' => 'June',
-                                '07' => 'July',
-                                '08' => 'August',
-                                '09' => 'September',
+                                '1'  => 'January',
+                                '2'  => 'February',
+                                '3'  => 'March',
+                                '4'  => 'April',
+                                '5'  => 'May',
+                                '6'  => 'June',
+                                '7'  => 'July',
+                                '8'  => 'August',
+                                '9'  => 'September',
                                 '10' => 'October',
                                 '11' => 'November',
                                 '12' => 'December',
                             ])
+                            ->default((int) now()->format('n'))
+                            ->selectablePlaceholder(false)
                             ->required(),
                         Select::make('year')
+                            ->label('Year')
                             ->options(function () {
-                                $years = range(date('Y') - 3, date('Y') + 3);
+                                $years = range(date('Y') - 3, date('Y') + 1);
+                                rsort($years);
                                 return array_combine($years, $years);
                             })
-                            ->required()
+                            ->default((int) now()->format('Y'))
+                            ->selectablePlaceholder(false)
+                            ->required(),
                     ])
                     ->modalWidth('md')
+                    ->modalHeading(fn($record) => 'Print Official DTR — ' . $record->name)
+                    ->modalDescription('Select the period then click Print to open the DTR report.')
+                    ->modalSubmitActionLabel('Print')
                     ->modalFooterActionsAlignment(Alignment::End)
-                    ->action(function ($record, array $data) {
+                    ->action(function ($record, array $data, $livewire) {
+                        // Use the same token/cache/proxy approach as the ViewUserDTR page.
+                        // This opens the PDF through the local /dtr/download route in a
+                        // styled popup window instead of redirecting away from this page.
+                        // Note: $this is unavailable in static context — Filament injects
+                        // the parent Livewire component as $livewire for event dispatching.
+                        $token = Str::random(16);
 
-                        $url = "https://umis.zcmc.online/generateDtr?" .
-                            "biometric_id=[" . $record->biometric_id .
-                            "]&monthof=" . $data['month'] .
-                            "&yearof=" . $data['year'] .
-                            "&view=2&frontview=0&whole_month=1&ext=" . $record->id;
+                        Cache::put('dtr_download_' . $token, [
+                            'biometric_id' => $record->biometric_id,
+                            'year'         => (int) $data['year'],
+                            'month'        => (int) $data['month'],
+                        ], now()->addMinutes(5));
 
-                        // Trigger download in the browser
-                        return redirect($url);
+                        $url = route('dtr.download', ['token' => $token]);
+
+                        $livewire->dispatch('open-new-tab', ['url' => $url]);
                     }),
 
                 Action::make("viewSchedule")

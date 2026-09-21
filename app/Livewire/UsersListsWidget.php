@@ -36,8 +36,11 @@ class UsersListsWidget extends TableWidget
 
     public function getTableQuery(): Builder
     {
-        return ExternalEmployees::query();
+        // Eager-load the dtr relationship to eliminate the N+1 query caused by
+        // the status/color column closures calling DTR::where(...) per row.
+        return ExternalEmployees::query()->with('dtr');
     }
+
     public function table(Table $table): Table
     {
         return $table
@@ -48,24 +51,20 @@ class UsersListsWidget extends TableWidget
                     ->searchable()
                     ->sortable()
                     ->badge()
-
                     ->size("10px")
                     ->color(function ($record) {
                         if ($record->deleted_at) {
                             return "danger";
                         }
-
-                        $dtr = DTR::where("biometric_id", $record->biometric_id)->first();
-                        return $dtr ? "success" : "danger";
+                        // Use the eager-loaded relationship — no extra query per row.
+                        return $record->dtr->isNotEmpty() ? "success" : "danger";
                     })
                     ->state(function ($record) {
-
                         if ($record->deleted_at) {
                             return "INACTIVE";
                         }
-
-                        $dtr = DTR::where("biometric_id", $record->biometric_id)->first();
-                        return $dtr ? "ACTIVE" : "INACTIVE";
+                        // Use the eager-loaded relationship — no extra query per row.
+                        return $record->dtr->isNotEmpty() ? "ACTIVE" : "INACTIVE";
                     }),
 
                 TextColumn::make("biometric_id")
@@ -98,6 +97,14 @@ class UsersListsWidget extends TableWidget
                     ->searchable()
                     ->sortable()
                     ->toggleable(),
+                TextColumn::make("email_verified_at")
+                    ->label("Email Verification")
+                    ->badge()
+                    ->size("10px")
+                    ->color(fn($state) => $state ? "success" : "danger")
+                    ->formatStateUsing(fn($state) => $state ? "VERIFIED" : "UNVERIFIED")
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make("contact_number")
                     ->label("Contact Number")
                     ->searchable()
@@ -122,12 +129,27 @@ class UsersListsWidget extends TableWidget
             ])
             ->filters([
 
+                SelectFilter::make('verification_status')
+                    ->label('Email Verification')
+                    ->options([
+                        'verified' => 'VERIFIED',
+                        'unverified' => 'UNVERIFIED',
+                    ])
+                    ->query(function (Builder $query, array $data) {
+                        $value = $data['value'] ?? null;
+                        if ($value === 'verified') {
+                            return $query->whereNotNull('email_verified_at');
+                        }
+                        if ($value === 'unverified') {
+                            return $query->whereNull('email_verified_at');
+                        }
+                        return $query;
+                    }),
+
                 TrashedFilter::make()
                     ->label('Employee Status')
-
                     ->falseLabel('Show DeActivated Only')
                     ->native(false) // Better UI
-
                     ->placeholder('All Employees'),
 
                 SelectFilter::make('status_filter')
@@ -220,15 +242,11 @@ class UsersListsWidget extends TableWidget
                     ->modalHeading('Reset Password')
                     ->modalDescription('Are you sure you want to reset this employee password? , Please enter the new password')
                     ->schema([
-
                         TextInput::make('new_password')
                             ->password()
                             ->maxLength(255),
-
                     ])
                     ->action(function ($record, $data) {
-
-
                         $record->update([
                             'password' => Hash::make($data['new_password']),
                         ]);
@@ -247,15 +265,11 @@ class UsersListsWidget extends TableWidget
                     ->modalHeading('Update Email')
                     ->modalDescription('Are you sure you want to update this employee email? , Please enter the new email')
                     ->schema([
-
                         TextInput::make('email')
                             ->email()
                             ->maxLength(255),
-
                     ])
                     ->action(function ($record, $data) {
-
-
                         $record->update([
                             'email' => $data['email'],
                         ]);
@@ -269,12 +283,9 @@ class UsersListsWidget extends TableWidget
 
             ])
             ->toolbarActions([
+                // Removed duplicate ->toolbarActions() call that was silently
+                // overwriting this one on every render.
                 BulkActionGroup::make([]),
-
-
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([])
             ]);
     }
 }

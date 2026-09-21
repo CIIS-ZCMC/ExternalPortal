@@ -5,12 +5,12 @@
     <div class="zcmc-brand-text" style="display: flex !important; flex-direction: column !important; justify-content: center !important; line-height: 1.15 !important; white-space: nowrap !important;">
         <div class="zcmc-brand-title text-slate-900 dark:text-white" style="font-size: 0.8125rem !important; font-weight: 700 !important; letter-spacing: -0.01em !important; display: flex !important; align-items: center !important; gap: 0.35rem !important;">
             <span>ZCMC</span>
-            <span class="zcmc-brand-tag bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-400 border border-emerald-500/20" style="font-size: 0.5625rem !important; font-weight: 700 !important; padding: 0.08rem 0.3rem !important; border-radius: 0.25rem !important; line-height: 1 !important; text-transform: uppercase !important; letter-spacing: 0.04em !important;">
-                Portal
+            <span class="zcmc-brand-tag bg-blue-500/10 text-blue-600 dark:bg-blue-400/15 dark:text-blue-400 border border-blue-500/20" style="font-size: 0.5625rem !important; font-weight: 700 !important; padding: 0.08rem 0.3rem !important; border-radius: 0.25rem !important; line-height: 1 !important; text-transform: uppercase !important; letter-spacing: 0.04em !important;">
+                Admin
             </span>
         </div>
         <span class="zcmc-brand-subtitle text-slate-500 dark:text-slate-400" style="font-size: 0.625rem !important; font-weight: 500 !important; letter-spacing: 0.01em !important; opacity: 0.75 !important;">
-            External Personnel System
+            External Personnel Portal
         </span>
     </div>
 </div>

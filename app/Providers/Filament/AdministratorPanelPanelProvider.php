@@ -12,6 +12,7 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Icons\Heroicon;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -29,15 +30,24 @@ class AdministratorPanelPanelProvider extends PanelProvider
             ->id('administratorPanel')
             ->path('administratorPanel')
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Blue,
+                'gray' => Color::Slate,
             ])
+            ->font('Plus Jakarta Sans')
+            ->brandLogo(fn () => view('filament.administrator-logo'))
+            ->brandLogoHeight('1.85rem')
+            ->globalSearch(false)
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn () => view('filament.scratch-styles')
+            )
+            ->favicon(asset('asset/zcmc.png'))
             ->discoverResources(in: app_path('Filament/AdministratorPanel/Resources'), for: 'App\Filament\AdministratorPanel\Resources')
             ->discoverPages(in: app_path('Filament/AdministratorPanel/Pages'), for: 'App\Filament\AdministratorPanel\Pages')
             ->pages([])
             ->discoverWidgets(in: app_path('Filament/AdministratorPanel/Widgets'), for: 'App\Filament\AdministratorPanel\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

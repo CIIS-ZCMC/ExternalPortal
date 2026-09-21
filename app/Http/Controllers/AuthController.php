@@ -100,28 +100,94 @@ class AuthController extends Controller
         if (request()->has("email_address")) {
             $email = request()->email_address;
         }
-        return view("Register", ["email" => $email]);
+
+        $prefilledAgencies = [
+            'Zamboanga City Medical Center (ZCMC)',
+            'Department of Health (DOH)',
+            'PhilHealth',
+            'Food and Drug Administration (FDA)',
+            'Other Hospital / Medical Institution',
+            'Other Hospital/ Medical Institution',
+            'Department of Education (DepEd)',
+            'Department of the Interior and Local Government (DILG)',
+            'Department of Social Welfare and Development (DSWD)',
+            'Department of Finance (DOF)',
+            'Department of Budget and Management (DBM)',
+            'Department of Science and Technology (DOST)',
+            'Department of Tourism (DOT)',
+            'Department of Justice (DOJ)',
+            'Department of Agriculture (DA)',
+            'Department of Labor and Employment (DOLE)',
+            'Department of National Defense (DND)',
+            'Department of Transportation (DOTr)',
+            'Department of Public Works and Highways (DPWH)',
+            'Department of Trade and Industry (DTI)',
+            'Department of Environment and Natural Resources (DENR)',
+            'Commission on Elections (COMELEC)',
+            'Commission on Higher Education (CHED)',
+            'Technical Education and Skills Development Authority (TESDA)',
+            'Civil Service Commission (CSC)',
+            'Professional Regulation Commission (PRC)',
+            'Commission on Audit (COA)',
+            'Government Service Insurance System (GSIS)',
+            'Provincial Government',
+            'City Government',
+            'Municipal Government',
+            'Barangay Government',
+            'Philippine National Police (PNP)',
+            'Armed Forces of the Philippines (AFP)',
+            'Other Government Agency',
+        ];
+
+        $normalizedPrefilled = array_map(fn($item) => strtolower(trim($item)), $prefilledAgencies);
+
+        $uniqueAgencies = ExternalEmployees::select('agency')
+            ->distinct()
+            ->whereNotNull('agency')
+            ->where('agency', '!=', '')
+            ->pluck('agency')
+            ->map(fn($item) => trim($item))
+            ->filter(fn($agency) => !empty($agency) && !in_array(strtolower($agency), $normalizedPrefilled))
+            ->unique()
+            ->sort()
+            ->values()
+            ->toArray();
+
+        return view("Register", [
+            "email" => $email,
+            "uniqueAgencies" => $uniqueAgencies,
+        ]);
     }
 
     public function login(Request $request)
     {
         $credentials = $request->only('username', 'password');
 
-        if (!Auth::guard("external")->attempt($credentials)) {
+        if (Auth::guard("external")->attempt($credentials)) {
+            $user = Auth::guard("external")->user();
 
-            if (Auth::guard("administrator")->attempt($credentials)) {
-                return redirect("/administratorPanel");
+            if (is_null($user->email_verified_at)) {
+                Auth::guard("external")->logout();
+                if ($request->hasSession()) {
+                    $request->session()->invalidate();
+                    $request->session()->regenerateToken();
+                }
+
+                return redirect()->route("portal.login")->with("error", "Your email address has not been verified yet. Please check your email to verify your account before logging in.");
             }
-            return redirect()->route("portal.login")->with("error", "Invalid username or password");
+
+            return redirect('/portal');
         }
 
-        return redirect('/portal');
+        if (Auth::guard("administrator")->attempt($credentials)) {
+            return redirect("/administratorPanel");
+        }
+
+        return redirect()->route("portal.login")->with("error", "Invalid username or password");
     }
 
-    public function SaveUser($user)
+    public function SaveUser($user, $isVerified = false)
     {
-
-
         $startBiometric = 8000;
 
         $latest = ExternalEmployees::withTrashed()
@@ -135,7 +201,7 @@ class AuthController extends Controller
 
         $nextBiometric = $latest ? $latest + 1 : $startBiometric;
 
-        $user = ExternalEmployees::firstOrCreate(
+        $employee = ExternalEmployees::firstOrCreate(
             [
                 'email' => $user['email'],
                 'contact_number' => $user['contact_number'],
@@ -144,24 +210,24 @@ class AuthController extends Controller
                 'username' => $user['username'],
             ],
             [
-                'middle_name' => $user['middle_name'],
-                'ext_name' => $user['ext_name'],
+                'middle_name' => $user['middle_name'] ?? null,
+                'ext_name' => $user['ext_name'] ?? null,
                 'email' => $user['email'],
-                'address' => $user['address'],
-                'agency' => $user['agency'],
-                'position' => $user['position'],
+                'address' => $user['address'] ?? '',
+                'agency' => $user['agency'] ?? null,
+                'position' => $user['position'] ?? null,
                 'username' => $user['username'],
                 'password' => Hash::make($user['password']),
                 'biometric_id' => $nextBiometric,
+                'email_verified_at' => $isVerified ? Carbon::now() : null,
             ]
         );
 
-        return $nextBiometric;
+        return $employee;
     }
 
     public function register(Request $request)
     {
-
         $request->validate([
             'last_name' => 'required|string|max:255',
             'first_name' => 'required|string|max:255',
@@ -176,33 +242,59 @@ class AuthController extends Controller
             'password' => 'required|string|min:4|confirmed',
         ]);
 
-        session()->put("user", $request->all());
+        $isGoogle = $request->has("email_address") && !empty($request->get("email_address"));
 
-        if ($request->has("email_address") && !empty($request->get("email_address"))) {
+        // Save directly to external_employees table
+        $employee = $this->SaveUser($request->all(), $isGoogle);
 
-            $nextBiometric = $this->SaveUser($request->all());
-            return redirect()->route("portal.successful", ["biometric_id" => $nextBiometric]);
+        if ($isGoogle) {
+            return redirect()->route("portal.successful", ["biometric_id" => $employee->biometric_id]);
         }
+
+        session()->put("user", $employee->toArray());
 
         return redirect()->route("portal.sendConfirmation");
     }
 
-
-
-    public function activate()
+    public function activate(Request $request)
     {
-
-
-        if (!isset(request()->data) && !session()->has("user")) {
+        if (!$request->has('data')) {
             return redirect()->route("portal.expire");
         }
 
-        $user = session()->has("user") ? session()->get("user") : decrypt(request()->data);
+        try {
+            $data = decrypt($request->data);
+        } catch (\Throwable $th) {
+            return redirect()->route("portal.expire");
+        }
 
-        $nextBiometric = $this->SaveUser($user);
+        $employee = null;
 
+        if (is_array($data)) {
+            if (!empty($data['id'])) {
+                $employee = ExternalEmployees::find($data['id']);
+            }
+            if (!$employee && !empty($data['email'])) {
+                $employee = ExternalEmployees::where('email', $data['email'])->first();
+            }
+        } elseif (is_numeric($data)) {
+            $employee = ExternalEmployees::find($data);
+        } elseif (is_string($data)) {
+            $employee = ExternalEmployees::where('email', $data)->first();
+        }
 
-        return redirect()->route("portal.AccountActivated", ["biometric_id" => $nextBiometric]);
+        if (!$employee) {
+            return redirect()->route("portal.expire");
+        }
+
+        // Do NOT create/save user, simply mark the email_verified_at date
+        if (is_null($employee->email_verified_at)) {
+            $employee->update([
+                'email_verified_at' => Carbon::now(),
+            ]);
+        }
+
+        return redirect()->route("portal.AccountActivated", ["biometric_id" => $employee->biometric_id]);
     }
 
     public function AccountActivated(Request $request)
@@ -214,6 +306,9 @@ class AuthController extends Controller
     public function checkEmail()
     {
         $user = session()->get("user");
+        if (!$user) {
+            return redirect()->route("portal.login");
+        }
         return view("CheckEmail", ['user' => $user]);
     }
 

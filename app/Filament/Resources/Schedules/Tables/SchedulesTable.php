@@ -39,35 +39,84 @@ class SchedulesTable
             ->recordUrl(null)
             ->columns([
                 TextColumn::make('dtr_date')
-                    ->label('DTR Date')
-                    ->date()
+                    ->label('Date & Day')
                     ->searchable()
-                    ->sortable(),
-                IconColumn::make('is_shifting')
-                    ->label('Is Shifting')
-                    ->icon(fn($state): ?string => $state ? 'heroicon-o-check-circle' : null)
-                    ->color('success'),
+                    ->sortable()
+                    ->badge()
+                    ->color(function ($state) {
+                        $day = Carbon::parse($state)->dayOfWeek;
+                        return in_array($day, [0, 6]) ? 'warning' : 'gray';
+                    })
+                    ->formatStateUsing(function ($state) {
+                        return Carbon::parse($state)->format('d M') . ' (' . Carbon::parse($state)->format('D') . ')';
+                    }),
+
+                TextColumn::make('is_shifting')
+                    ->label('Shift Type')
+                    ->badge()
+                    ->color(fn($state) => $state ? 'info' : 'gray')
+                    ->icon(fn($state) => $state ? 'heroicon-o-arrow-path' : 'heroicon-o-building-office')
+                    ->formatStateUsing(fn($state) => $state ? 'Shifting' : 'Office Hours'),
+
                 TextColumn::make('first_in')
-                    ->label('First In'),
+                    ->label('AM In')
+                    ->fontFamily('mono')
+                    ->formatStateUsing(function ($state) {
+                        if (!$state) return '--:--';
+                        try {
+                            return Carbon::parse($state)->format('h:i A');
+                        } catch (\Throwable $e) {
+                            return $state;
+                        }
+                    }),
+
                 TextColumn::make('first_out')
-                    ->default("--:--:--")
-                    ->label('First Out'),
+                    ->label('AM Out')
+                    ->fontFamily('mono')
+                    ->default('--:--')
+                    ->formatStateUsing(function ($state) {
+                        if (!$state) return '--:--';
+                        try {
+                            return Carbon::parse($state)->format('h:i A');
+                        } catch (\Throwable $e) {
+                            return $state;
+                        }
+                    }),
+
                 TextColumn::make('second_in')
-                    ->default("--:--:--")
-                    ->label('Second In'),
+                    ->label('PM In')
+                    ->fontFamily('mono')
+                    ->default('--:--')
+                    ->formatStateUsing(function ($state) {
+                        if (!$state) return '--:--';
+                        try {
+                            return Carbon::parse($state)->format('h:i A');
+                        } catch (\Throwable $e) {
+                            return $state;
+                        }
+                    }),
+
                 TextColumn::make('second_out')
-                    ->label('Second Out'),
+                    ->label('PM Out')
+                    ->fontFamily('mono')
+                    ->formatStateUsing(function ($state) {
+                        if (!$state) return '--:--';
+                        try {
+                            return Carbon::parse($state)->format('h:i A');
+                        } catch (\Throwable $e) {
+                            return $state;
+                        }
+                    }),
             ])
             ->filters([
                 Filter::make('dtr_date_filter')
                     ->schema([
                         DatePicker::make('dtr_date')
-                            ->label('Select Month/Year')
+                            ->label('Filter Specific Date')
                             ->native(false)
                             ->displayFormat('F j, Y')
-                            ->minDate(fn($livewire) => Carbon::create($livewire->year, $livewire->month, 1)->startOfMonth())
-                            ->maxDate(fn($livewire) => Carbon::create($livewire->year, $livewire->month, 1)->endOfMonth())
-                            ->required(),
+                            ->minDate(fn($livewire) => Carbon::create($livewire->year ?? now()->year, $livewire->month ?? now()->month, 1)->startOfMonth())
+                            ->maxDate(fn($livewire) => Carbon::create($livewire->year ?? now()->year, $livewire->month ?? now()->month, 1)->endOfMonth()),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query->when(
@@ -75,12 +124,12 @@ class SchedulesTable
                             function (Builder $query, $date) {
                                 $carbonDate = Carbon::parse($date);
                                 return $query
-                                    ->where('dtr_date', $carbonDate);
+                                    ->whereDate('dtr_date', $carbonDate);
                             }
                         );
                     })
                     ->indicateUsing(function (array $data): ?string {
-                        if (! $data['dtr_date']) {
+                        if (! ($data['dtr_date'] ?? null)) {
                             return null;
                         }
                         return 'Date: ' . Carbon::parse($data['dtr_date'])->format('F j, Y');
@@ -191,8 +240,9 @@ class SchedulesTable
                 DeleteAction::make(),
 
             ])
-            ->emptyStateHeading('No schedules found')
-            ->emptyStateDescription('You may create a new schedule using the "Create Schedule" button below.')
+            ->emptyStateHeading('No Duty Schedules Found')
+            ->emptyStateDescription('No duty schedules recorded for this month yet. You may plot a new schedule using the "Plot New Schedule" button.')
+            ->emptyStateIcon('heroicon-o-calendar-days')
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),

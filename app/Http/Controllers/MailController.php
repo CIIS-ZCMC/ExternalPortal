@@ -12,20 +12,29 @@ class MailController extends Controller
 {
     public function sendConfirmation()
     {
-
         $user = session()->get("user");
+
+        if (!$user) {
+            return redirect()->route("portal.login");
+        }
+
+        $tokenData = [
+            'id' => $user['id'] ?? null,
+            'email' => $user['email'],
+        ];
+
         $mail = new MailConfig();
 
         $mail->send([
             "To_receiver" => $user["email"],
-            "Receiver_Name" => $user["first_name"] . " " . $user["last_name"],
+            "Receiver_Name" => ($user["first_name"] ?? '') . " " . ($user["last_name"] ?? ''),
             "Subject" => "ZCMC External Employee Portal Registration",
             "Body" => "
             <h3>Welcome!</h3>
             <p>Thank you for registering to the ZCMC External Employee Portal.</p>
             <p>Please click the link below to confirm your registration:</p>
              <br>
-            <a href='" . request()->getSchemeAndHttpHost() . "/activate?data=" . encrypt(session()->get("user")) . "'>Verify Account</a>
+            <a href='" . request()->getSchemeAndHttpHost() . "/activate?data=" . encrypt($tokenData) . "'>Verify Account</a>
             ",
         ]);
 

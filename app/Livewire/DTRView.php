@@ -35,9 +35,11 @@ use Filament\Schemas\Components\Grid as ComponentsGrid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Support\Enums\IconSize;
 use Illuminate\Support\Facades\Cache;
 use Filament\Notifications\Notification;
 use App\Helpers\DtrToken;
+use Livewire\Attributes\Computed;
 
 
 class DTRView extends TableWidget
@@ -67,17 +69,61 @@ class DTRView extends TableWidget
     }
 
 
+    #[\Livewire\Attributes\On('applyFilter')]
     public function ApplyFilter($month, $year)
     {
-        $this->month = $month;
-        $this->year = $year;
+        $this->month = (int) $month;
+        $this->year = (int) $year;
+        $this->resetTable();
+        unset($this->dtrRecords); // bust the computed cache on filter change
     }
 
     public function refreshDtr()
     {
-        $biometric_id = Auth::user()->biometric_id;
-        Http::get(config('app.dtr_api_url') . "/api/dtr/json/{$biometric_id}/{$this->year}/{$this->month}?refresh=1&token=" . DtrToken::generate());
+        $biometric_id = Auth::user()?->biometric_id;
 
+        if (!$biometric_id) {
+            Notification::make()
+                ->title('No Biometric ID')
+                ->body('Your account is not linked to an attendance biometric PIN.')
+                ->warning()
+                ->send();
+            return;
+        }
+
+        try {
+            $apiUrl = config('app.dtr_api_url');
+            if (empty($apiUrl)) {
+                throw new \Exception('DTR API URL is not configured.');
+            }
+
+            $response = Http::timeout(4)->connectTimeout(2)->get(
+                "{$apiUrl}/api/dtr/json/{$biometric_id}/{$this->year}/{$this->month}?refresh=1&token=" . DtrToken::generate()
+            );
+
+            if ($response->successful()) {
+                Notification::make()
+                    ->title('Attendance Punches Synced')
+                    ->body('Latest biometric attendance records retrieved.')
+                    ->success()
+                    ->send();
+            } else {
+                Notification::make()
+                    ->title('Attendance Server Notice')
+                    ->body('Could not sync latest punches from the attendance server.')
+                    ->warning()
+                    ->send();
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("DTR API refresh error for PIN {$biometric_id}: " . $e->getMessage());
+            Notification::make()
+                ->title('Attendance Server Offline')
+                ->body('Unable to connect to the attendance service (host unreachable). Please try again later.')
+                ->warning()
+                ->send();
+        }
+
+        unset($this->dtrRecords); // bust computed cache so re-render fetches fresh data
         $this->dispatch('refresh');
     }
 
@@ -104,21 +150,45 @@ class DTRView extends TableWidget
             ->success()
             ->send();
 
-        $this->refreshDtr();
+        // No need to hit the external DTR API on a local schedule save —
+        // just refresh the table.
+        unset($this->dtrRecords);
+        $this->dispatch('refresh');
     }
 
+    /**
+     * Fetch DTR records from the external API.
+     * The #[Computed] attribute caches the result for the lifetime of this
+     * render cycle, so multiple callers (->records(), ->hidden()) share one
+     * HTTP request instead of each firing their own.
+     */
+    #[Computed]
     public function getDtrRecords()
     {
-        $biometric_id = Auth::user()->biometric_id;
+        $biometric_id = Auth::user()?->biometric_id;
 
-        $response = Http::get(config('app.dtr_api_url') . "/api/dtr/json/{$biometric_id}/{$this->year}/{$this->month}?token=" . DtrToken::generate());
-
-        if (!$response->successful()) {
+        if (!$biometric_id) {
             return collect([]);
         }
 
-        $data = $response->json();
-        $dailyRecords = $data['daily_records'] ?? [];
+        $dailyRecords = [];
+
+        try {
+            $apiUrl = config('app.dtr_api_url');
+            if (!empty($apiUrl)) {
+                $response = Http::timeout(4)->connectTimeout(2)->get(
+                    "{$apiUrl}/api/dtr/json/{$biometric_id}/{$this->year}/{$this->month}?token=" . DtrToken::generate()
+                );
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $dailyRecords = $data['daily_records'] ?? [];
+                }
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("DTR API connection error for PIN {$biometric_id}: " . $e->getMessage());
+            return collect([]);
+        }
 
         $dtRecords = collect($dailyRecords)
             ->map(function ($record) {
@@ -151,30 +221,80 @@ class DTRView extends TableWidget
             ->records(fn() => $this->getDtrRecords())
             ->columns([
                 TextColumn::make('dtr_date')
-                    ->label('Weekday')
+                    ->label('Date & Day')
                     ->searchable()
                     ->sortable()
+                    ->badge()
+                    ->color(function ($state) {
+                        $day = Carbon::parse($state)->dayOfWeek;
+                        return in_array($day, [0, 6]) ? 'warning' : 'gray';
+                    })
                     ->formatStateUsing(function ($state) {
-                        return Carbon::parse($state)->format('d') . " | " . Carbon::parse($state)->format('D');
+                        return Carbon::parse($state)->format('d M') . ' (' . Carbon::parse($state)->format('D') . ')';
                     }),
-                TextColumn::make('first_in')->label('Arrival/Departure')->searchable()
-                    ->formatStateUsing(fn($state) => $state ?: '-')
-                    ->sortable(),
-                TextColumn::make('first_out')->label('Arrival/Departure')->searchable()
-                    ->formatStateUsing(fn($state) => $state ?: '-')
-                    ->sortable(),
-                TextColumn::make('second_in')->label('Arrival/Departure')->searchable()
-                    ->formatStateUsing(fn($state) => $state ?: '-')
-                    ->sortable(),
-                TextColumn::make('second_out')->label('Arrival/Departure')->searchable()
-                    ->formatStateUsing(fn($state) => $state ?: '-')
-                    ->sortable(),
-                IconColumn::make('has_schedule')
-                    ->label('Has Schedule')
-                    ->tooltip(fn($state): ?string => $state ? 'Has schedule' : 'No schedule found, Please process schedule first as this will not be displayed in printouts')
-                    ->icon(fn($state): ?string => $state ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')
-                    ->color(fn($state): ?string => $state ? 'success' : 'danger'),
 
+                TextColumn::make('first_in')
+                    ->label('AM In')
+                    ->searchable()
+                    ->sortable()
+                    ->fontFamily('mono')
+                    ->formatStateUsing(function ($state) {
+                        if (!$state) return '--:--';
+                        try {
+                            return Carbon::parse($state)->format('h:i A');
+                        } catch (\Throwable $e) {
+                            return $state;
+                        }
+                    }),
+
+                TextColumn::make('first_out')
+                    ->label('AM Out')
+                    ->searchable()
+                    ->sortable()
+                    ->fontFamily('mono')
+                    ->formatStateUsing(function ($state) {
+                        if (!$state) return '--:--';
+                        try {
+                            return Carbon::parse($state)->format('h:i A');
+                        } catch (\Throwable $e) {
+                            return $state;
+                        }
+                    }),
+
+                TextColumn::make('second_in')
+                    ->label('PM In')
+                    ->searchable()
+                    ->sortable()
+                    ->fontFamily('mono')
+                    ->formatStateUsing(function ($state) {
+                        if (!$state) return '--:--';
+                        try {
+                            return Carbon::parse($state)->format('h:i A');
+                        } catch (\Throwable $e) {
+                            return $state;
+                        }
+                    }),
+
+                TextColumn::make('second_out')
+                    ->label('PM Out')
+                    ->searchable()
+                    ->sortable()
+                    ->fontFamily('mono')
+                    ->formatStateUsing(function ($state) {
+                        if (!$state) return '--:--';
+                        try {
+                            return Carbon::parse($state)->format('h:i A');
+                        } catch (\Throwable $e) {
+                            return $state;
+                        }
+                    }),
+
+                IconColumn::make('has_schedule')
+                    ->label('Schedule')
+                    ->tooltip(fn($state): ?string => $state ? 'Schedule is plotted.' : 'No schedule plotted for this day; punches will not be shown on printed DTR.')
+                    ->icon(fn($state): ?string => $state ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')
+                    ->color(fn($state): ?string => $state ? 'success' : 'danger')
+                    ->size(IconSize::Small),
             ])
             ->filters([
                 Filter::make("dtr_date_filter")
@@ -187,22 +307,23 @@ class DTRView extends TableWidget
                     })
                     ->schema([
                         DatePicker::make("selected_date")
-                            ->label("Select Date")
+                            ->label("Filter Specific Date")
                             ->live(),
                     ])
             ])
-            ->emptyStateHeading('No DTR Found')
-            ->headerActionsPosition(HeaderActionsPosition::Bottom)
+            ->emptyStateHeading('No Attendance Records Found')
+            ->emptyStateDescription('No punches have been recorded for this period yet. If you have punched on a terminal, click "Refresh Punches".')
+            ->emptyStateIcon('heroicon-o-calendar-days')
             ->headerActions([
                 Action::make("Refresh_DTR")
-                    ->label("Refresh")
-                    ->color("warning")
+                    ->label("Refresh Punches")
+                    ->color("gray")
                     ->icon(Heroicon::ArrowPath)
                     ->action(fn() => $this->refreshDtr()),
                 Action::make("Print_DTR")
-                    ->label("Print DTR")
-                    ->color("info")
-                    ->icon(Heroicon::CalendarDays)
+                    ->label("Print Official DTR")
+                    ->color("primary")
+                    ->icon(Heroicon::Printer)
                     ->hidden(fn() => $this->getDtrRecords()->count() == 0)
                     ->action(function () {
                         $token = Str::random(16);

@@ -12,6 +12,8 @@ Route::get('/', function () {
     return redirect()->route('portal.login');
 });
 
+Route::get('/portal/dtr', fn() => redirect('/portal/d-t-r'));
+
 Route::get("/portal/login", [AuthController::class, 'loginPage'])->name('portal.login');
 
 Route::get("/portal/register", [AuthController::class, 'registerPage'])->name('portal.register');
@@ -60,17 +62,20 @@ Route::get('/dtr/download/{token}', function ($token) {
         abort(403, 'Invalid request.');
     }
 
-    $url = config('app.dtr_api_url') . "/api/dtr/download/{$biometric_id}/{$year}/{$month}?token=" . \App\Helpers\DtrToken::generate();
+    try {
+        $url = config('app.dtr_api_url') . "/api/dtr/download/{$biometric_id}/{$year}/{$month}?token=" . \App\Helpers\DtrToken::generate();
+        $response = Http::timeout(6)->connectTimeout(3)->get($url);
 
-    $response = Http::get($url);
+        if (!$response->successful()) {
+            abort(404, 'DTR report not found on the attendance server.');
+        }
 
-    if (!$response->successful()) {
-        abort(404, 'DTR report not found.');
+        return response($response->body(), 200, [
+            'Content-Type' => $response->header('Content-Type') ?? 'application/octet-stream',
+        ]);
+    } catch (\Throwable $e) {
+        abort(503, 'Attendance server is currently unreachable. Please try again later.');
     }
-
-    return response($response->body(), 200, [
-        'Content-Type' => $response->header('Content-Type') ?? 'application/octet-stream',
-    ]);
 })->name('dtr.download');
 
 Route::get('/test-email', function () {

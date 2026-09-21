@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::connection('external_employees')->create('custom_schedules', function (Blueprint $table) {
-            $table->id();
-            $table->string('portal_setting_id')->nullable();
-            $table->string('dtr_date')->nullable();
-            $table->boolean('is_shifting')->default(false);
-            $table->timestamps();
-        });
+        if (!Schema::connection('external_employees')->hasTable('custom_schedules')) {
+            Schema::connection('external_employees')->create('custom_schedules', function (Blueprint $table) {
+                $table->id();
+                $table->string('portal_setting_id')->nullable();
+                $table->string('dtr_date')->nullable();
+                $table->boolean('is_shifting')->default(false);
+                $table->timestamps();
+            });
+        }
     }
 
     /**

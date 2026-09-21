@@ -26,9 +26,13 @@ class GoogleController extends Controller
         $user = ExternalEmployees::where('email', $googleUser->getEmail())->first();
 
         if (!$user) {
-
             return redirect()->route('google.notFound', ['email' => $googleUser->getEmail()]);
         }
+
+        if (is_null($user->email_verified_at)) {
+            $user->update(['email_verified_at' => \Carbon\Carbon::now()]);
+        }
+
         Auth::guard('external')->login($user);
         session()->put("userToken_", [
             'email' => $googleUser->getEmail(),

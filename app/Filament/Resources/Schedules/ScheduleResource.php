@@ -19,11 +19,15 @@ class ScheduleResource extends Resource
 {
     protected static ?string $model = ExternalEmployeeSchedule::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::SquaresPlus;
-
-    protected static ?string $recordTitleAttribute = 'ExternalEmployeeSchedule';
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;
 
     protected static ?string $navigationLabel = "My Schedules";
+
+    protected static ?string $modelLabel = "Duty Schedule";
+
+    protected static ?string $pluralModelLabel = "Duty Schedules";
+
+    protected static ?string $recordTitleAttribute = 'dtr_date';
 
     protected static ?int $navigationSort = 2;
 

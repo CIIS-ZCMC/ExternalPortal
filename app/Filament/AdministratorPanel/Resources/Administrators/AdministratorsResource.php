@@ -19,7 +19,13 @@ class AdministratorsResource extends Resource
 {
     protected static ?string $model = Administrator::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShieldCheck;
+
+    protected static ?string $navigationLabel = 'Admin Accounts';
+
+    protected static ?string $modelLabel = 'Administrator';
+
+    protected static ?string $pluralModelLabel = 'Administrators';
 
     protected static ?string $recordTitleAttribute = 'name';
 

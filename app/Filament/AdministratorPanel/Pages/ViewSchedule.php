@@ -13,9 +13,31 @@ class ViewSchedule extends Page
     public static bool $shouldRegisterNavigation = false;
 
     public $biometric_id;
+
     public function mount(): void
     {
         $this->biometric_id = request()->query('biometric_id');
+    }
+
+    public function getTitle(): string|\Illuminate\Contracts\Support\Htmlable
+    {
+        return $this->biometric_id ? "Duty Schedule: PIN {$this->biometric_id}" : 'Employee Duty Schedule';
+    }
+
+    public function getSubheading(): string|\Illuminate\Contracts\Support\Htmlable|null
+    {
+        return 'Manage and allocate duty shifts and office hours for this employee.';
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            \Filament\Actions\Action::make('back')
+                ->label('Back to Employee Directory')
+                ->icon('heroicon-o-arrow-left')
+                ->color('gray')
+                ->url(route('filament.administratorPanel.resources.external-lists.index')),
+        ];
     }
 
 

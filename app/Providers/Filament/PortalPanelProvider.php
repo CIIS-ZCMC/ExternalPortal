@@ -11,6 +11,7 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -19,7 +20,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use App\Http\Middleware\AuthCheckMiddleWare;
+use App\Http\Middleware\EnsureEmailIsVerified;
 
 class PortalPanelProvider extends PanelProvider
 {
@@ -32,9 +33,18 @@ class PortalPanelProvider extends PanelProvider
             ->login(fn() => redirect()->route('portal.login'))
 
             ->colors([
-                'primary' => Color::Green,
+                'primary' => Color::Emerald,
+                'gray' => Color::Slate,
             ])
+            ->font('Plus Jakarta Sans')
             ->brandLogo(fn() => view('filament.adminLogo'))
+            ->brandLogoHeight('1.85rem')
+            ->globalSearch(false)
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn () => view('filament.scratch-styles')
+            )
+            ->favicon(asset('asset/zcmc.png'))
             ->authGuard("external")
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
@@ -60,6 +70,7 @@ class PortalPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                EnsureEmailIsVerified::class,
             ]);
     }
 }

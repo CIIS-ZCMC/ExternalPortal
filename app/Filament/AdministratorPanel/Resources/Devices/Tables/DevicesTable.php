@@ -29,16 +29,66 @@ class DevicesTable
             ->recordUrl(null)
             ->columns([
                 TextColumn::make('device_name')
-                    ->searchable(),
-                TextColumn::make('ip_address')
-                    ->searchable(),
+                    ->label('Device Name')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold')
+                    ->icon('heroicon-o-cpu-chip'),
 
+                TextColumn::make('ip_address')
+                    ->label('IP Address')
+                    ->searchable()
+                    ->sortable()
+                    ->fontFamily('mono')
+                    ->copyable()
+                    ->copyMessage('IP Address copied')
+                    ->icon('heroicon-o-server'),
+
+                TextColumn::make('soap_port')
+                    ->label('SOAP Port')
+                    ->fontFamily('mono')
+                    ->default('4370')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('for_attendance')
+                    ->label('Role')
+                    ->badge()
+                    ->color(fn($record) => $record->for_attendance ? 'success' : ($record->is_registration ? 'info' : 'gray'))
+                    ->icon(fn($record) => $record->for_attendance ? 'heroicon-o-clock' : ($record->is_registration ? 'heroicon-o-user-plus' : 'heroicon-o-cpu-chip'))
+                    ->formatStateUsing(function ($state, $record) {
+                        if ($record->for_attendance && $record->is_registration) {
+                            return 'Attendance & Registration';
+                        }
+                        if ($record->for_attendance) {
+                            return 'Attendance Terminal';
+                        }
+                        if ($record->is_registration) {
+                            return 'Enrollment Terminal';
+                        }
+                        return 'Standard Terminal';
+                    }),
+
+                TextColumn::make('is_active')
+                    ->label('Operational Status')
+                    ->badge()
+                    ->color(fn($record) => $record->is_active ? 'success' : 'danger')
+                    ->icon(fn($record) => $record->is_active ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')
+                    ->formatStateUsing(fn($state) => $state ? 'ACTIVE' : 'INACTIVE')
+                    ->sortable(),
+
+                TextColumn::make('last_seen_at')
+                    ->label('Last Heartbeat')
+                    ->since()
+                    ->placeholder('Never synced')
+                    ->sortable()
+                    ->toggleable(),
             ])
-            ->filters([
-                //
-            ])
+            ->emptyStateHeading('No Biometric Devices Found')
+            ->emptyStateDescription('Add new biometric time clocks using the "New Device" button.')
+            ->emptyStateIcon('heroicon-o-cpu-chip')
             ->recordActions([
-                //
+                EditAction::make()
+                    ->icon('heroicon-o-pencil-square'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

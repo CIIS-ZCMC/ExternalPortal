@@ -21,70 +21,133 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
 use Illuminate\Database\Eloquent\Builder;
-use Psy\ManualUpdater\Checker;
 
 class ViewScheduleAdminWidget extends TableWidget
 {
     public $biometric_id;
 
+    /**
+     * Resolved once in mount() and reused by all callers within the component.
+     * Prevents re-querying ExternalEmployees on every table re-render / button click.
+     */
+    public ?int $external_employee_id = null;
+
     protected $listeners = ['applyFilter' => 'ApplyFilter'];
 
     public int $month;
     public int $year;
+
     public function mount()
     {
         $this->month = now()->month;
-        $this->year = now()->year;
-    }
+        $this->year  = now()->year;
 
+        // Resolve the external employee's PK once so table() and action closures
+        // never need to run ExternalEmployees::where(...) again per render.
+        if ($this->biometric_id) {
+            $this->external_employee_id = ExternalEmployees::where('biometric_id', $this->biometric_id)
+                ->value('id');
+        }
+    }
 
     public function ApplyFilter($month, $year)
     {
         $this->month = $month;
-        $this->year = $year;
+        $this->year  = $year;
     }
-
-
-
 
     public function getColumnSpan(): int|string|array
     {
         return "full";
     }
+
     public function table(Table $table): Table
     {
-        $external = ExternalEmployees::where("biometric_id", $this->biometric_id)->first();
+        // Use the cached external_employee_id instead of re-querying the DB
+        // on every render / pagination / button-click.
+        $externalEmployeeId = $this->external_employee_id;
 
         return $table
             ->query(
-                fn(): Builder => ExternalEmployeeSchedule::query()->where('external_employee_id', $external->id)
+                fn(): Builder => ExternalEmployeeSchedule::query()
+                    ->where('external_employee_id', $externalEmployeeId)
                     ->whereMonth("dtr_date", $this->month)
                     ->whereYear("dtr_date", $this->year)
-
             )
             ->columns([
                 TextColumn::make('dtr_date')
-                    ->label('DTR Date')
-                    ->date()
+                    ->label('Date & Day')
                     ->searchable()
-                    ->sortable(),
-                IconColumn::make('is_shifting')
-                    ->label('Is Shifting')
-                    ->icon(fn($state): ?string => $state ? 'heroicon-o-check-circle' : null)
-                    ->color('success'),
+                    ->sortable()
+                    ->badge()
+                    ->color(function ($state) {
+                        $day = \Carbon\Carbon::parse($state)->dayOfWeek;
+                        return in_array($day, [0, 6]) ? 'warning' : 'gray';
+                    })
+                    ->formatStateUsing(function ($state) {
+                        return \Carbon\Carbon::parse($state)->format('d M') . ' (' . \Carbon\Carbon::parse($state)->format('D') . ')';
+                    }),
+
+                TextColumn::make('is_shifting')
+                    ->label('Shift Type')
+                    ->badge()
+                    ->color(fn($state) => $state ? 'info' : 'gray')
+                    ->icon(fn($state) => $state ? 'heroicon-o-arrow-path' : 'heroicon-o-building-office')
+                    ->formatStateUsing(fn($state) => $state ? 'Shifting' : 'Office Hours'),
+
                 TextColumn::make('first_in')
-                    ->label('First In'),
+                    ->label('AM In')
+                    ->fontFamily('mono')
+                    ->formatStateUsing(function ($state) {
+                        if (!$state) return '--:--';
+                        try {
+                            return \Carbon\Carbon::parse($state)->format('h:i A');
+                        } catch (\Throwable $e) {
+                            return $state;
+                        }
+                    }),
+
                 TextColumn::make('first_out')
-                    ->default("--:--:--")
-                    ->label('First Out'),
+                    ->label('AM Out')
+                    ->fontFamily('mono')
+                    ->default('--:--')
+                    ->formatStateUsing(function ($state) {
+                        if (!$state) return '--:--';
+                        try {
+                            return \Carbon\Carbon::parse($state)->format('h:i A');
+                        } catch (\Throwable $e) {
+                            return $state;
+                        }
+                    }),
+
                 TextColumn::make('second_in')
-                    ->default("--:--:--")
-                    ->label('Second In'),
+                    ->label('PM In')
+                    ->fontFamily('mono')
+                    ->default('--:--')
+                    ->formatStateUsing(function ($state) {
+                        if (!$state) return '--:--';
+                        try {
+                            return \Carbon\Carbon::parse($state)->format('h:i A');
+                        } catch (\Throwable $e) {
+                            return $state;
+                        }
+                    }),
+
                 TextColumn::make('second_out')
-                    ->label('Second Out'),
+                    ->label('PM Out')
+                    ->fontFamily('mono')
+                    ->formatStateUsing(function ($state) {
+                        if (!$state) return '--:--';
+                        try {
+                            return \Carbon\Carbon::parse($state)->format('h:i A');
+                        } catch (\Throwable $e) {
+                            return $state;
+                        }
+                    }),
             ])
-            ->emptyStateHeading('No schedules found')
-            ->emptyStateDescription('You may create a new schedule using the "Create Schedule" button below.')
+            ->emptyStateHeading('No Duty Schedules Plotted')
+            ->emptyStateDescription('Plot this employee\'s schedule for this month using the "Create Schedule" button.')
+            ->emptyStateIcon('heroicon-o-calendar')
             ->filters([
                 //
             ])
@@ -112,17 +175,7 @@ class ViewScheduleAdminWidget extends TableWidget
                                         TableColumn::make('Second Out'),
                                     ])
                                     ->afterStateHydrated(function ($component, $state, $record) {
-                                        // if (! $record) return;
-                                        // $data = $record->unitPricings?->map(function ($item) {
-                                        //     return [
-                                        //         'id' => $item->id,
-                                        //         'unit' => $item->name,
-                                        //         'required_qty' => $item->qty,
-                                        //         'price' => $item->prices?->price ?? 0,
-                                        //     ];
-                                        // })->toArray() ?? [];
-
-                                        // $component->state($data);
+                                        // reserved for future pre-fill logic
                                     })
                                     ->schema([
                                         Checkbox::make('is_shifting')
@@ -201,7 +254,6 @@ class ViewScheduleAdminWidget extends TableWidget
                                         TimePicker::make("second_in")
                                             ->label("Second In")
                                             ->hidden(fn($get) => $get('is_shifting'))
-
                                             ->required(),
                                         TimePicker::make("second_out")
                                             ->label("Second Out")
@@ -215,7 +267,9 @@ class ViewScheduleAdminWidget extends TableWidget
                             ])
                             ->columnSpanFull()
                     ])->action(function (array $data) {
-                        $employeeExternalId = ExternalEmployees::where("biometric_id", $this->biometric_id)->first()->id;
+                        // Use the cached PK — no extra DB query on button click.
+                        $employeeExternalId = $this->external_employee_id;
+
                         if (isset($data['schedule_4entries']) && is_array($data['schedule_4entries'])) {
                             $data['schedule_4entries'] = array_map(function ($item) use ($employeeExternalId) {
                                 $item['external_employee_id'] = $employeeExternalId;
@@ -226,11 +280,10 @@ class ViewScheduleAdminWidget extends TableWidget
                                 return $item;
                             }, $data['schedule_4entries']);
                         }
-                        foreach ($data['schedule_4entries'] as $entry) {
 
+                        foreach ($data['schedule_4entries'] as $entry) {
                             $dbRecord = ExternalEmployeeSchedule::where('external_employee_id', $employeeExternalId)
                                 ->where('dtr_date', $entry['dtr_date']);
-
 
                             if ($dbRecord->exists()) {
                                 Notification::make()
@@ -241,7 +294,7 @@ class ViewScheduleAdminWidget extends TableWidget
                                 return $dbRecord->first();
                             }
 
-                            $lastRecord = ExternalEmployeeSchedule::create($entry);
+                            ExternalEmployeeSchedule::create($entry);
                         }
                     })
             ])
@@ -259,11 +312,11 @@ class ViewScheduleAdminWidget extends TableWidget
                     ->mountUsing(function ($form, $record) {
                         $form->fill([
                             'is_shifting' => $record->is_shifting,
-                            'dtr_date' => $record->dtr_date,
-                            'first_in' => $record->first_in,
-                            'first_out' => $record->first_out,
-                            'second_in' => $record->second_in,
-                            'second_out' => $record->second_out,
+                            'dtr_date'    => $record->dtr_date,
+                            'first_in'    => $record->first_in,
+                            'first_out'   => $record->first_out,
+                            'second_in'   => $record->second_in,
+                            'second_out'  => $record->second_out,
                         ]);
                     })
                     ->schema(function ($record) {
@@ -333,14 +386,13 @@ class ViewScheduleAdminWidget extends TableWidget
                         ];
                     })
                     ->action(function ($record, $data) {
-
                         ExternalEmployeeSchedule::find($record->id)->update([
                             'is_shifting' => $data['is_shifting'],
-                            'dtr_date' => $data['dtr_date'],
-                            'first_in' => $data['first_in'],
-                            'first_out' => isset($data['first_out']) ? $data['first_out'] : null,
-                            'second_in' => isset($data['second_in']) ? $data['second_in'] : null,
-                            'second_out' => $data['second_out'],
+                            'dtr_date'    => $data['dtr_date'],
+                            'first_in'    => $data['first_in'],
+                            'first_out'   => $data['first_out'] ?? null,
+                            'second_in'   => $data['second_in'] ?? null,
+                            'second_out'  => $data['second_out'],
                         ]);
                         Notification::make()
                             ->title('Schedule updated successfully')
