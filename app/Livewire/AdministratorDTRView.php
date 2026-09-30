@@ -100,11 +100,15 @@ class AdministratorDTRView extends TableWidget
                 throw new \Exception('DTR API URL is not configured.');
             }
 
-            $response = Http::timeout(4)->connectTimeout(2)->get(
+            $response = Http::timeout(10)->connectTimeout(6)->retry(2, 200)->get(
                 "{$apiUrl}/api/dtr/json/{$this->biometric_id}/{$this->year}/{$this->month}?refresh=1&token=" . DtrToken::generate()
             );
 
             if ($response->successful()) {
+                $data = $response->json();
+                $cacheKey = "dtr_records_{$this->biometric_id}_{$this->year}_{$this->month}";
+                CacheFacade::put($cacheKey, $data['daily_records'] ?? [], now()->addMinutes(5));
+
                 Notification::make()
                     ->title('Attendance Punches Synced')
                     ->body('Latest biometric records successfully retrieved.')
@@ -151,17 +155,19 @@ class AdministratorDTRView extends TableWidget
             ->success()
             ->send();
 
-        // No need to hit the external DTR API on a local schedule save —
-        // just refresh the table.
+        // Invalidate cached records so the freshly saved schedule is reflected
+        if ($this->biometric_id) {
+            CacheFacade::forget("dtr_records_{$this->biometric_id}_{$this->year}_{$this->month}");
+        }
+
         unset($this->dtrRecords);
         $this->dispatch('refresh');
     }
 
     /**
-     * Fetch DTR records from the external API.
+     * Fetch DTR records from the external API or cache.
      * The #[Computed] attribute caches the result for the lifetime of this
-     * render cycle, so multiple callers (->records(), ->hidden()) share one
-     * HTTP request instead of each firing their own.
+     * render cycle, while CacheFacade caches for 5 minutes across Livewire requests.
      */
     #[Computed]
     public function getDtrRecords()
@@ -170,22 +176,28 @@ class AdministratorDTRView extends TableWidget
             return collect([]);
         }
 
-        $dailyRecords = [];
+        $cacheKey = "dtr_records_{$this->biometric_id}_{$this->year}_{$this->month}";
+        $dailyRecords = CacheFacade::get($cacheKey);
 
-        try {
-            $apiUrl = config('app.dtr_api_url');
-            if (!empty($apiUrl)) {
-                $url = "{$apiUrl}/api/dtr/json/{$this->biometric_id}/{$this->year}/{$this->month}?token=" . DtrToken::generate();
-                $response = Http::timeout(4)->connectTimeout(2)->get($url);
+        if ($dailyRecords === null) {
+            $dailyRecords = [];
 
-                if ($response->successful()) {
-                    $data = $response->json();
-                    $dailyRecords = $data['daily_records'] ?? [];
+            try {
+                $apiUrl = config('app.dtr_api_url');
+                if (!empty($apiUrl)) {
+                    $url = "{$apiUrl}/api/dtr/json/{$this->biometric_id}/{$this->year}/{$this->month}?token=" . DtrToken::generate();
+                    $response = Http::timeout(10)->connectTimeout(6)->retry(2, 200)->get($url);
+
+                    if ($response->successful()) {
+                        $data = $response->json();
+                        $dailyRecords = $data['daily_records'] ?? [];
+                        CacheFacade::put($cacheKey, $dailyRecords, now()->addMinutes(5));
+                    }
                 }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Administrator DTR API connection error for PIN {$this->biometric_id}: " . $e->getMessage());
+                return collect([]);
             }
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning("Administrator DTR API connection error for PIN {$this->biometric_id}: " . $e->getMessage());
-            return collect([]);
         }
 
         $dtRecords = collect($dailyRecords)
@@ -335,9 +347,12 @@ class AdministratorDTRView extends TableWidget
                         $count = count($record['data'] ?? []);
                         return $count > 0 ? 'success' : 'gray';
                     })
-                    ->modalHeading(fn($record) => 'Device Logs - ' . Carbon::parse($record['dtr_date'])->format('M d, Y'))
+                    ->modalHeading(fn($record) => 'Device Logs' . (!empty($record['dtr_date']) ? ' - ' . Carbon::parse($record['dtr_date'])->format('M d, Y') : ''))
                     ->modalSubmitAction(false)
-                    ->modalContent(fn($record) => view('filament.modals.dtr-logs', ['logs' => collect($record['data'] ?? []), 'date' => $record['dtr_date']])),
+                    ->modalContent(fn($record) => view('filament.modals.dtr-logs', [
+                        'logs' => collect($record['data'] ?? []),
+                        'date' => $record['dtr_date'] ?? null,
+                    ])),
                 Action::make('create_schedule')
                     ->label('Create Schedule')
                     ->icon(Heroicon::Calendar)
@@ -345,8 +360,17 @@ class AdministratorDTRView extends TableWidget
                     ->modalHeading('Create Schedule')
                     ->modalSubmitActionLabel('Save')
                     ->mountUsing(function ($form, $record) {
+                        if (!$record) {
+                            Notification::make()
+                                ->title('Attendance Record Unavailable')
+                                ->body('Could not load details for this day. Please refresh punches and try again.')
+                                ->warning()
+                                ->send();
+                            return;
+                        }
+
                         $form->fill([
-                            'dtr_date' => $record['dtr_date'],
+                            'dtr_date' => $record['dtr_date'] ?? null,
                         ]);
                     })
                     ->schema(function () {
