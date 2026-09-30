@@ -754,6 +754,7 @@ class ExternalListsTable
 
         $devices = Devices::where("is_registration", 0)
             ->where("for_attendance", 0)
+            ->where("is_hrbliz",0)
             ->get();
 
 
