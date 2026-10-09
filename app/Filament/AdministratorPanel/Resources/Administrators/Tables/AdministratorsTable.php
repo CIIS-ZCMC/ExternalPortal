@@ -43,6 +43,18 @@ class AdministratorsTable
                     ->formatStateUsing(fn($state) => (int)$state === 1 ? 'Super Administrator' : 'Administrator')
                     ->sortable(),
 
+                TextColumn::make('assigned_agencies')
+                    ->label('Assigned Agencies')
+                    ->badge()
+                    ->color(fn($state) => empty($state) ? 'gray' : 'primary')
+                    ->formatStateUsing(function ($state) {
+                        if (empty($state)) {
+                            return 'All Agencies';
+                        }
+                        return is_array($state) ? implode(', ', $state) : $state;
+                    })
+                    ->wrap(),
+
                 TextColumn::make('created_at')
                     ->label('Account Created')
                     ->date('M d, Y')

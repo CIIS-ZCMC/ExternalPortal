@@ -31,10 +31,28 @@ class ExternalListsResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-      public static function canViewAny(): bool
+    public static function canViewAny(): bool
     {
        
         return true;
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery();
+        $admin = auth('administrator')->user();
+
+        if ($admin && !empty($admin->assigned_agencies)) {
+            $agencies = is_array($admin->assigned_agencies)
+                ? $admin->assigned_agencies
+                : json_decode($admin->assigned_agencies, true);
+
+            if (!empty($agencies)) {
+                $query->whereIn('agency', $agencies);
+            }
+        }
+
+        return $query;
     }
     
     public static function form(Schema $schema): Schema

@@ -23,7 +23,12 @@ class Administrator extends AuthenticatableUser implements FilamentUser
         'email',
         'password',
         'username',
-        'role'
+        'role',
+        'assigned_agencies',
+    ];
+
+    protected $casts = [
+        'assigned_agencies' => 'array',
     ];
 
     protected $hidden = [
