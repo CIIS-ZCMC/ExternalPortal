@@ -94,3 +94,12 @@ Route::get('/test-email', function () {
 
     return response()->json(['success' => false, 'message' => 'Email failed to send.', 'error' => $result]);
 });
+
+Route::controller(\App\Http\Controllers\ScheduleCalendarController::class)->prefix('portal-api/schedules')->name('portal.schedules.')->group(function () {
+    Route::get('/events', 'getEvents')->name('events');
+    Route::post('/store', 'store')->name('store');
+    Route::post('/update-drop-resize', 'updateDropResize')->name('updateDropResize');
+    Route::put('/update/{id}', 'update')->name('update');
+    Route::delete('/destroy/{id?}', 'destroy')->name('destroy');
+    Route::post('/clear-all', 'clearAll')->name('clearAll');
+});

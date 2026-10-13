@@ -534,8 +534,8 @@ class ExternalListsTable
 
                 Action::make("viewSchedule")
                     ->label("View Schedule")
-                    ->icon("heroicon-o-eye")
-                    ->color("gray")
+                    ->icon("heroicon-o-calendar")
+                    ->color("primary")
                     ->url(fn($record): string => ViewSchedule::getUrl([
                         'biometric_id' => $record->biometric_id
                     ]))

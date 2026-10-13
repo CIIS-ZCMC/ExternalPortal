@@ -73,6 +73,11 @@ class ListSchedules extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            \Filament\Actions\Action::make('calendar_view')
+                ->label("Calendar View (Drag & Drop)")
+                ->icon('heroicon-o-calendar')
+                ->color('primary')
+                ->url(\App\Filament\Pages\MyScheduleCalendar::getUrl()),
             CreateAction::make()
                 ->label("Plot New Schedule")
                 ->icon('heroicon-o-plus'),
