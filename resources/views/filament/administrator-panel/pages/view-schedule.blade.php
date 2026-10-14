@@ -81,134 +81,70 @@
                 </div>
 
                 {{-- Column 4: Scratch Shifting Palette Sidebar --}}
+                @php
+                    $isSuperAdmin = auth('administrator')->user()?->role === 1;
+                    try {
+                        $shiftPresetsList = \App\Models\ShiftPreset::active()->get();
+                    } catch (\Throwable $e) {
+                        $shiftPresetsList = collect();
+                    }
+                @endphp
                 <div class="zcmc-col-4 space-y-4">
                     <div class="zcmc-calendar-card">
-                        <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
-                            <div>
-                                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                                    <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    Duty Shift Presets
-                                </h3>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                    Drag any card directly onto the calendar to assign shift.
-                                </p>
+                        <div class="flex items-center justify-between gap-2 pb-2.5 mb-2.5 border-b border-slate-200/80 dark:border-slate-800">
+                            <div class="flex items-center gap-1.5 min-w-0">
+                                <svg class="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span class="text-xs font-bold text-slate-800 dark:text-slate-100 tracking-tight truncate">
+                                    Shift Presets
+                                </span>
                             </div>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
-                                6 Presets
-                            </span>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold font-mono bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/70 dark:border-blue-900/60">
+                                    {{ $shiftPresetsList->count() }}
+                                </span>
+                                @if ($isSuperAdmin)
+                                    <a 
+                                        href="{{ route('filament.administratorPanel.resources.shift-presets.index') }}" 
+                                        title="Manage Presets"
+                                        class="inline-flex items-center justify-center w-5 h-5 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                    </a>
+                                @endif
+                            </div>
                         </div>
 
-                        {{-- Draggable Presets Palette Container (Same style as calendar events) --}}
+                        {{-- Draggable Presets Palette Container (Dynamic from ShiftPreset model) --}}
                         <div id="external-shift-palette" class="space-y-1.5">
-                            {{-- Morning Shift --}}
-                            <div 
-                                class="fc-shift-item zcmc-shift-card zcmc-shift-morning"
-                                data-title="Shift: 06:00 AM - 02:00 PM"
-                                data-duration="08:00"
-                                data-color="#0284c7"
-                                data-border="#0369a1"
-                                data-shifting="1"
-                                data-first-in="06:00:00"
-                                data-second-out="14:00:00"
-                            >
-                                <span class="truncate">Morning: 06:00 AM - 02:00 PM</span>
-                                <span class="text-[9px] font-mono px-1 py-0.2 rounded bg-black/20 shrink-0 ml-1">8h</span>
-                            </div>
-
-                            {{-- Afternoon Shift --}}
-                            <div 
-                                class="fc-shift-item zcmc-shift-card zcmc-shift-afternoon"
-                                data-title="Shift: 02:00 PM - 10:00 PM"
-                                data-duration="08:00"
-                                data-color="#d97706"
-                                data-border="#b45309"
-                                data-shifting="1"
-                                data-first-in="14:00:00"
-                                data-second-out="22:00:00"
-                            >
-                                <span class="truncate">Afternoon: 02:00 PM - 10:00 PM</span>
-                                <span class="text-[9px] font-mono px-1 py-0.2 rounded bg-black/20 shrink-0 ml-1">8h</span>
-                            </div>
-
-                            {{-- Night Shift --}}
-                            <div 
-                                class="fc-shift-item zcmc-shift-card zcmc-shift-night"
-                                data-title="Shift: 10:00 PM - 06:00 AM"
-                                data-duration="08:00"
-                                data-color="#4f46e5"
-                                data-border="#4338ca"
-                                data-shifting="1"
-                                data-first-in="22:00:00"
-                                data-second-out="06:00:00"
-                            >
-                                <span class="truncate">Night: 10:00 PM - 06:00 AM</span>
-                                <span class="text-[9px] font-mono px-1 py-0.2 rounded bg-black/20 shrink-0 ml-1">Grave</span>
-                            </div>
-
-                            {{-- Regular Office Hours --}}
-                            <div 
-                                class="fc-shift-item zcmc-shift-card zcmc-shift-office"
-                                data-title="Office Hrs: 08:00 AM - 05:00 PM"
-                                data-duration="09:00"
-                                data-color="#059669"
-                                data-border="#047857"
-                                data-shifting="0"
-                                data-first-in="08:00:00"
-                                data-first-out="12:00:00"
-                                data-second-in="13:00:00"
-                                data-second-out="17:00:00"
-                            >
-                                <span class="truncate">Office: 08:00 AM - 05:00 PM</span>
-                                <span class="text-[9px] font-mono px-1 py-0.2 rounded bg-black/20 shrink-0 ml-1">Std</span>
-                            </div>
-
-                            {{-- Day Shift --}}
-                            <div 
-                                class="fc-shift-item zcmc-shift-card zcmc-shift-day"
-                                data-title="Shift: 08:00 AM - 04:00 PM"
-                                data-duration="08:00"
-                                data-color="#0d9488"
-                                data-border="#0f766e"
-                                data-shifting="1"
-                                data-first-in="08:00:00"
-                                data-second-out="16:00:00"
-                            >
-                                <span class="truncate">Day: 08:00 AM - 04:00 PM</span>
-                                <span class="text-[9px] font-mono px-1 py-0.2 rounded bg-black/20 shrink-0 ml-1">8h</span>
-                            </div>
-
-                            {{-- 24-Hour Duty Shift --}}
-                            <div 
-                                class="fc-shift-item zcmc-shift-card zcmc-shift-24hr"
-                                data-title="Shift: 08:00 AM - 08:00 AM"
-                                data-duration="24:00"
-                                data-color="#e11d48"
-                                data-border="#be123c"
-                                data-shifting="1"
-                                data-first-in="08:00:00"
-                                data-second-out="08:00:00"
-                            >
-                                <span class="truncate">24-Hour: 08:00 AM - 08:00 AM</span>
-                                <span class="text-[9px] font-mono px-1 py-0.2 rounded bg-black/20 shrink-0 ml-1">24h</span>
-                            </div>
-                        </div>
-
-                        {{-- Quick Info Card --}}
-                        <div class="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 space-y-1.5">
-                            <div class="flex items-start gap-1.5">
-                                <svg width="14" height="14" style="width: 14px !important; height: 14px !important; min-width: 14px !important; min-height: 14px !important;" class="text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                                <span><strong>Fast Drag:</strong> Instant drop onto any calendar day without delay.</span>
-                            </div>
-                            <div class="flex items-start gap-1.5">
-                                <svg width="14" height="14" style="width: 14px !important; height: 14px !important; min-width: 14px !important; min-height: 14px !important;" class="text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                                </svg>
-                                <span><strong>Extend Edge:</strong> Drag edge to resize shift hours.</span>
-                            </div>
+                            @forelse ($shiftPresetsList as $preset)
+                                <div 
+                                    class="fc-shift-item zcmc-shift-card"
+                                    style="background-color: {{ $preset->color }}; border-color: {{ $preset->border_color ?: $preset->color }};"
+                                    data-title="{{ $preset->name }}"
+                                    data-duration="{{ sprintf('%02d:00', (int)($preset->total_hours ?: 8)) }}"
+                                    data-color="{{ $preset->color }}"
+                                    data-border="{{ $preset->border_color ?: $preset->color }}"
+                                    data-shifting="{{ $preset->is_shifting ? '1' : '0' }}"
+                                    data-first-in="{{ $preset->first_in }}"
+                                    data-first-out="{{ $preset->first_out }}"
+                                    data-second-in="{{ $preset->second_in }}"
+                                    data-second-out="{{ $preset->second_out }}"
+                                >
+                                    <span class="truncate">{{ $preset->name }}</span>
+                                    @if ($preset->badge_label)
+                                        <span class="text-[9px] font-mono px-1 py-0.2 rounded bg-black/20 shrink-0 ml-1">{{ $preset->badge_label }}</span>
+                                    @endif
+                                </div>
+                            @empty
+                                <div class="text-xs text-slate-400 py-3 text-center">
+                                    No presets available.
+                                </div>
+                            @endforelse
                         </div>
                     </div>
                 </div>
@@ -235,6 +171,7 @@
                                 externalPaletteId: 'external-shift-palette',
                                 employeeId: employeeId,
                                 canEdit: true,
+                                shiftPresets: @json($shiftPresetsList),
                                 eventsUrl: '{{ route("portal.schedules.events") }}',
                                 storeUrl: '{{ route("portal.schedules.store") }}',
                                 updateDropResizeUrl: '{{ route("portal.schedules.updateDropResize") }}',

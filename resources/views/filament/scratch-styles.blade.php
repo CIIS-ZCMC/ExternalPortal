@@ -594,6 +594,7 @@
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
         transition: transform 0.1s ease, box-shadow 0.1s ease !important;
         position: relative !important;
+        overflow: hidden !important;
     }
 
     .fc-event:hover {
@@ -605,7 +606,7 @@
     .fc-event.fc-event-dragging,
     .fc-event-dragging,
     .fc-daygrid-event.fc-event-dragging {
-        opacity: 0.9 !important;
+        opacity: 0.88 !important;
         transform: scale(1.02) !important;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2) !important;
         z-index: 9999 !important;
@@ -616,15 +617,49 @@
 
     .fc-event.fc-event-mirror,
     .fc-event-mirror,
-    .fc-daygrid-event.fc-event-mirror {
-        opacity: 0.95 !important;
-        box-shadow: 0 12px 28px -5px rgba(37, 99, 235, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.25) !important;
-        z-index: 99999 !important;
-        transform: scale(1.02) !important;
+    .fc-daygrid-event.fc-event-mirror,
+    .fc-daygrid-event-harness.fc-event-mirror,
+    body > .fc-event-mirror {
+        opacity: 1 !important;
+        box-shadow: 0 12px 28px -5px rgba(37, 99, 235, 0.45), 0 8px 10px -6px rgba(0, 0, 0, 0.25) !important;
+        z-index: 999999 !important;
+        transform: scale(1.03) !important;
         border: 2px solid #ffffff !important;
         outline: 2px solid #2563eb !important;
         visibility: visible !important;
         display: block !important;
+        color: #ffffff !important;
+    }
+
+    /* Force text and content inside mirror to be 100% visible and styled with high contrast */
+    .fc-event-mirror .fc-event-main,
+    .fc-event-mirror .fc-event-title,
+    .fc-event-mirror .fc-event-time,
+    .fc-event-mirror .fc-event-custom-content,
+    .fc-event-dragging .fc-event-main,
+    .fc-event-dragging .fc-event-custom-content {
+        color: #ffffff !important;
+        visibility: visible !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-weight: 700 !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;
+    }
+
+    .fc-event-custom-content {
+        color: #ffffff !important;
+        line-height: 1.25 !important;
+        width: 100% !important;
+    }
+
+    .fc-event-custom-title {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4) !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
     }
 
     /* External preset card dragging clone */
@@ -637,7 +672,7 @@
         pointer-events: none !important;
     }
 
-    /* Event Resizer Handles - Bidirectional arrow cursor <-> on extending */
+    /* Event Resizer Handles - Subtle edge grips that appear clearly on hover */
     .fc-event-resizer,
     .fc-event-resizer-end,
     .fc-event-resizer-start,
@@ -647,9 +682,9 @@
         cursor: ew-resize !important;
         cursor: col-resize !important;
         display: block !important;
-        opacity: 0.85 !important;
+        opacity: 0 !important;
         z-index: 50 !important;
-        transition: all 0.15s ease !important;
+        transition: opacity 0.15s ease, background-color 0.15s ease !important;
     }
 
     .fc-event:hover .fc-event-resizer,
@@ -659,19 +694,19 @@
         opacity: 1 !important;
     }
 
-    /* Horizontal resizers (DayGrid Month View) with bidirectional handle arrow */
+    /* Horizontal resizers (DayGrid Month View) */
     .fc-event-resizer-end,
     .fc-daygrid-event-resizer-end {
         cursor: ew-resize !important;
         cursor: col-resize !important;
-        right: -2px !important;
+        right: 0 !important;
         top: 0 !important;
         bottom: 0 !important;
-        width: 16px !important;
+        width: 10px !important;
         border-top-right-radius: 0.375rem !important;
         border-bottom-right-radius: 0.375rem !important;
-        background: rgba(255, 255, 255, 0.5) !important;
-        border-left: 2px solid rgba(0, 0, 0, 0.35) !important;
+        background: rgba(255, 255, 255, 0.3) !important;
+        border-left: 2px solid rgba(255, 255, 255, 0.7) !important;
     }
 
     .fc-event:hover .fc-event-resizer-end,
@@ -679,7 +714,7 @@
     .fc-event-resizer-end:hover {
         cursor: ew-resize !important;
         cursor: col-resize !important;
-        background: rgba(255, 255, 255, 0.85) !important;
+        background: rgba(255, 255, 255, 0.8) !important;
         border-left: 2px solid #2563eb !important;
     }
 
@@ -687,14 +722,14 @@
     .fc-daygrid-event-resizer-start {
         cursor: ew-resize !important;
         cursor: col-resize !important;
-        left: -2px !important;
+        left: 0 !important;
         top: 0 !important;
         bottom: 0 !important;
-        width: 16px !important;
+        width: 10px !important;
         border-top-left-radius: 0.375rem !important;
         border-bottom-left-radius: 0.375rem !important;
-        background: rgba(255, 255, 255, 0.5) !important;
-        border-right: 2px solid rgba(0, 0, 0, 0.35) !important;
+        background: rgba(255, 255, 255, 0.3) !important;
+        border-right: 2px solid rgba(255, 255, 255, 0.7) !important;
     }
 
     .fc-event:hover .fc-event-resizer-start,
@@ -702,7 +737,7 @@
     .fc-event-resizer-start:hover {
         cursor: ew-resize !important;
         cursor: col-resize !important;
-        background: rgba(255, 255, 255, 0.85) !important;
+        background: rgba(255, 255, 255, 0.8) !important;
         border-right: 2px solid #2563eb !important;
     }
 
@@ -748,23 +783,29 @@
         display: flex !important;
         align-items: center !important;
         justify-content: space-between !important;
-        padding: 0.25rem 0.5rem !important;
-        border-radius: 0.375rem !important;
+        padding: 0.35rem 0.65rem !important;
+        border-radius: 0.5rem !important;
         border-width: 1px !important;
         border-style: solid !important;
         cursor: grab !important;
         user-select: none !important;
-        margin-bottom: 0.35rem !important;
+        margin-bottom: 0.375rem !important;
         font-size: 0.75rem !important;
         font-weight: 600 !important;
         line-height: 1.25 !important;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
-        transition: transform 0.08s ease !important;
+        color: #ffffff !important;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.08) !important;
+        transition: transform 0.1s ease, box-shadow 0.1s ease !important;
+    }
+
+    .zcmc-shift-card:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 8px -2px rgba(0, 0, 0, 0.15) !important;
     }
 
     .zcmc-shift-card:active {
         cursor: grabbing !important;
-        transform: scale(0.99) !important;
+        transform: scale(0.98) !important;
     }
 
     /* Morning Shift Card (Sky / Cyan Blue) */
@@ -934,6 +975,269 @@
         background-color: #0f172a !important;
         color: #60a5fa !important;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    /* --------------------------------------------------------------------------
+       8. Guide & Instruction Card Styles (Scratch Professional UI)
+       -------------------------------------------------------------------------- */
+    .zcmc-guide-card {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 0.875rem !important;
+        padding: 1.5rem 1.75rem !important;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+        margin-bottom: 1.5rem !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .dark .zcmc-guide-card {
+        background: #0f172a !important;
+        border-color: #1e293b !important;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2) !important;
+    }
+
+    .zcmc-guide-header {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 1.5rem !important;
+        padding: 0.25rem 0 !important;
+    }
+
+    .zcmc-guide-intro {
+        display: flex !important;
+        align-items: center !important;
+        gap: 1.125rem !important;
+    }
+
+    .zcmc-guide-icon-box {
+        width: 2.75rem !important;
+        height: 2.75rem !important;
+        min-width: 2.75rem !important;
+        min-height: 2.75rem !important;
+        border-radius: 0.75rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: #ecfdf5 !important;
+        border: 1px solid #a7f3d0 !important;
+        color: #059669 !important;
+        flex-shrink: 0 !important;
+    }
+
+    .dark .zcmc-guide-icon-box {
+        background: rgba(6, 78, 59, 0.3) !important;
+        border-color: rgba(5, 150, 105, 0.4) !important;
+        color: #34d399 !important;
+    }
+
+    .zcmc-guide-title {
+        font-size: 0.9375rem !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.01em !important;
+        color: #0f172a !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.625rem !important;
+        flex-wrap: wrap !important;
+        margin: 0 !important;
+        line-height: 1.3 !important;
+    }
+
+    .dark .zcmc-guide-title {
+        color: #f8fafc !important;
+    }
+
+    .zcmc-guide-desc {
+        font-size: 0.8125rem !important;
+        color: #64748b !important;
+        margin-top: 0.35rem !important;
+        line-height: 1.45 !important;
+    }
+
+    .dark .zcmc-guide-desc {
+        color: #94a3b8 !important;
+    }
+
+    .zcmc-guide-toggle-btn {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+        padding: 0.55rem 1.125rem !important;
+        border-radius: 0.5rem !important;
+        font-size: 0.8125rem !important;
+        font-weight: 700 !important;
+        color: #065f46 !important;
+        background-color: #f0fdf4 !important;
+        border: 1px solid #bbf7d0 !important;
+        cursor: pointer !important;
+        white-space: nowrap !important;
+        transition: all 0.15s ease !important;
+    }
+
+    .zcmc-guide-toggle-btn:hover {
+        background-color: #dcfce7 !important;
+        border-color: #86efac !important;
+        color: #047857 !important;
+    }
+
+    .dark .zcmc-guide-toggle-btn {
+        background-color: rgba(6, 78, 59, 0.25) !important;
+        border-color: rgba(5, 150, 105, 0.4) !important;
+        color: #6ee7b7 !important;
+    }
+
+    .dark .zcmc-guide-toggle-btn:hover {
+        background-color: rgba(6, 78, 59, 0.4) !important;
+        border-color: #059669 !important;
+        color: #a7f3d0 !important;
+    }
+
+    .zcmc-guide-badge {
+        font-size: 0.65rem !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+        padding: 0.15rem 0.55rem !important;
+        border-radius: 9999px !important;
+        background-color: #ecfdf5 !important;
+        color: #047857 !important;
+        border: 1px solid #a7f3d0 !important;
+    }
+
+    .dark .zcmc-guide-badge {
+        background-color: rgba(6, 78, 59, 0.4) !important;
+        color: #6ee7b7 !important;
+        border-color: rgba(5, 150, 105, 0.3) !important;
+    }
+
+    .zcmc-steps-grid {
+        display: grid !important;
+        grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+        gap: 1rem !important;
+        margin-top: 1.25rem !important;
+        padding-top: 1.25rem !important;
+        border-top: 1px dashed #e2e8f0 !important;
+    }
+
+    @media (min-width: 640px) {
+        .zcmc-steps-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .zcmc-steps-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        }
+    }
+
+    .dark .zcmc-steps-grid {
+        border-top-color: #1e293b !important;
+    }
+
+    .zcmc-step-card {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 0.75rem !important;
+        padding: 1.125rem 1rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        transition: transform 0.15s ease, border-color 0.15s ease !important;
+    }
+
+    .zcmc-step-card:hover {
+        border-color: #cbd5e1 !important;
+        transform: translateY(-1px) !important;
+    }
+
+    .dark .zcmc-step-card {
+        background: #1e293b !important;
+        border-color: #334155 !important;
+    }
+
+    .dark .zcmc-step-card:hover {
+        border-color: #475569 !important;
+    }
+
+    .zcmc-step-header {
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.625rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .zcmc-step-num {
+        width: 1.5rem !important;
+        height: 1.5rem !important;
+        min-width: 1.5rem !important;
+        min-height: 1.5rem !important;
+        border-radius: 9999px !important;
+        background: #059669 !important;
+        color: #ffffff !important;
+        font-size: 0.75rem !important;
+        font-weight: 800 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    .zcmc-step-title {
+        font-size: 0.8125rem !important;
+        font-weight: 700 !important;
+        color: #0f172a !important;
+        letter-spacing: -0.01em !important;
+        margin: 0 !important;
+    }
+
+    .dark .zcmc-step-title {
+        color: #f8fafc !important;
+    }
+
+    .zcmc-step-body {
+        font-size: 0.75rem !important;
+        color: #475569 !important;
+        line-height: 1.5 !important;
+        margin: 0 0 0.625rem 0 !important;
+    }
+
+    .dark .zcmc-step-body {
+        color: #94a3b8 !important;
+    }
+
+    .zcmc-step-footer {
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.4rem !important;
+        font-size: 0.6875rem !important;
+        font-weight: 600 !important;
+        color: #059669 !important;
+    }
+
+    .dark .zcmc-step-footer {
+        color: #34d399 !important;
+    }
+
+    .zcmc-guide-note {
+        margin-top: 1rem !important;
+        padding: 0.75rem 1rem !important;
+        border-radius: 0.625rem !important;
+        background: #fffbeb !important;
+        border: 1px solid #fde68a !important;
+        color: #92400e !important;
+        font-size: 0.75rem !important;
+        line-height: 1.45 !important;
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 0.625rem !important;
+    }
+
+    .dark .zcmc-guide-note {
+        background: rgba(120, 53, 15, 0.25) !important;
+        border-color: rgba(217, 119, 6, 0.3) !important;
+        color: #fcd34d !important;
     }
 </style>
 

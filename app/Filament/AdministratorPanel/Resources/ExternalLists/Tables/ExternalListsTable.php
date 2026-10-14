@@ -42,7 +42,7 @@ class ExternalListsTable
     {
         return $table
             ->recordUrl(null)
-            ->selectable(fn() => auth('administrator')->user()->role === 1)
+            ->selectable(fn() => auth('administrator')->user()?->hasPermission('register_device') ?? false)
             ->columns([
                 TextColumn::make("biometric_id")
                     ->label("Biometric ID")
@@ -60,6 +60,16 @@ class ExternalListsTable
                     ->sortable(['last_name', 'first_name'])
                     ->weight("bold")
                     ->description(fn($record) => $record->position ?: 'External Personnel'),
+
+                TextColumn::make("username")
+                    ->label("Username")
+                    ->badge()
+                    ->color("gray")
+                    ->fontFamily("mono")
+                    ->searchable()
+                    ->sortable()
+                    ->copyable()
+                    ->copyMessage("Username copied"),
 
                 TextColumn::make("agency")
                     ->label("Agency / Affiliation")
@@ -138,12 +148,6 @@ class ExternalListsTable
                     ->searchable()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
-                TextColumn::make("username")
-                    ->label("Username")
-                    ->searchable()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 \Filament\Tables\Filters\SelectFilter::make('verification_status')
@@ -170,6 +174,7 @@ class ExternalListsTable
                         ->label('Time Adjustments')
                         ->icon('heroicon-o-clock')
                         ->color('primary')
+                        ->visible(fn() => auth('administrator')->user()?->hasPermission('time_adjustments') ?? false)
                         ->modalHeading(fn($record) => 'Time Adjustments - ' . $record->name . ($record->biometric_id ? " (Biometric ID: {$record->biometric_id})" : ''))
                         ->modalDescription('Create a schedule and corresponding device logs for this employee on a specific date.')
                         ->modalWidth('2xl')
@@ -224,22 +229,45 @@ class ExternalListsTable
                                     Select::make('time_shift')
                                         ->label('Shift Preset')
                                         ->disabled(fn($get) => !(bool)$get('is_shifting'))
-                                        ->options([
-                                            '1' => '10:00 AM - 06:00 PM',
-                                            '2' => '02:00 PM - 10:00 PM',
-                                            '3' => '10:00 PM - 06:00 AM',
-                                            '4' => '06:00 AM - 02:00 PM',
-                                            '5' => '08:00 AM - 04:00 PM',
-                                            '6' => '08:00 AM - 08:00 AM',
-                                            '7' => '08:00 AM - 12:00 PM',
-                                            '8' => '01:00 PM - 05:00 PM',
-                                            '9' => '07:00 AM - 07:00 AM',
-                                            '10' => '03:00 PM - 07:00 AM',
-                                            '11' => '06:00 AM - 10:00 PM',
-                                        ])
+                                        ->options(function () {
+                                            try {
+                                                $presets = \App\Models\ShiftPreset::active()->get();
+                                                if ($presets->isNotEmpty()) {
+                                                    return $presets->pluck('name', 'id')->toArray();
+                                                }
+                                            } catch (\Throwable $e) {}
+
+                                            return [
+                                                '1' => '10:00 AM - 06:00 PM',
+                                                '2' => '02:00 PM - 10:00 PM',
+                                                '3' => '10:00 PM - 06:00 AM',
+                                                '4' => '06:00 AM - 02:00 PM',
+                                                '5' => '08:00 AM - 04:00 PM',
+                                                '6' => '08:00 AM - 08:00 AM',
+                                                '7' => '08:00 AM - 12:00 PM',
+                                                '8' => '01:00 PM - 05:00 PM',
+                                                '9' => '07:00 AM - 07:00 AM',
+                                                '10' => '03:00 PM - 07:00 AM',
+                                                '11' => '06:00 AM - 10:00 PM',
+                                            ];
+                                        })
                                         ->live()
                                         ->afterStateUpdated(function ($set, $get) {
                                             if ($get('time_shift')) {
+                                                $shift = $get('time_shift');
+
+                                                // Try dynamic ShiftPreset model first
+                                                try {
+                                                    $preset = \App\Models\ShiftPreset::find($shift);
+                                                    if ($preset) {
+                                                        $set('first_in', $preset->first_in);
+                                                        $set('first_out', $preset->first_out);
+                                                        $set('second_in', $preset->second_in);
+                                                        $set('second_out', $preset->second_out);
+                                                        return;
+                                                    }
+                                                } catch (\Throwable $e) {}
+
                                                 $shiftMap = [
                                                     '1' => ['10:00:00', '18:00:00'],
                                                     '2' => ['14:00:00', '22:00:00'],
@@ -253,7 +281,7 @@ class ExternalListsTable
                                                     '10' => ['15:00:00', '23:00:00'],
                                                     '11' => ['06:00:00', '22:00:00'],
                                                 ];
-                                                $times = $shiftMap[$get('time_shift')] ?? ['08:00:00', '16:00:00'];
+                                                $times = $shiftMap[$shift] ?? ['08:00:00', '16:00:00'];
                                                 $set('first_in', $times[0]);
                                                 $set('second_out', $times[1]);
                                                 $set('first_out', null);
@@ -413,7 +441,7 @@ class ExternalListsTable
                     ->action(function ($record) {
                         $record->delete();
                     })
-                    ->visible(fn($record) => $record->deleted_at === null),
+                    ->visible(fn($record) => $record->deleted_at === null && (auth('administrator')->user()?->hasPermission('deactivate') ?? false)),
                 Action::make('reset_password')
                     ->label('Reset Password')
                     ->icon(Heroicon::LockClosed)
@@ -421,6 +449,7 @@ class ExternalListsTable
                     ->requiresConfirmation()
                     ->modalHeading('Reset Password')
                     ->modalDescription('Are you sure you want to reset this employee password? , Please enter the new password')
+                    ->visible(fn() => auth('administrator')->user()?->hasPermission('reset_password') ?? false)
                     ->schema([
 
                         TextInput::make('new_password')
@@ -448,6 +477,7 @@ class ExternalListsTable
                     ->requiresConfirmation()
                     ->modalHeading('Update Email')
                     ->modalDescription('Are you sure you want to update this employee email? , Please enter the new email')
+                    ->visible(fn() => auth('administrator')->user()?->hasPermission('update_email') ?? false)
                     ->schema([
 
                         TextInput::make('email')
@@ -470,9 +500,13 @@ class ExternalListsTable
                     }),
                     EditAction::make()
                         ->label('Edit Profile')
-                        ->icon('heroicon-o-pencil-square'),
+                        ->icon('heroicon-o-pencil-square')
+                        ->visible(fn() => auth('administrator')->user()?->hasPermission('edit_profile') ?? false),
                 ])
-                ->visible(fn() => auth('administrator')->user()->role === 1),
+                ->visible(fn() => auth('administrator')->user()?->isSuperAdmin() || !empty(array_intersect(
+                    ['time_adjustments', 'deactivate', 'reset_password', 'update_email', 'edit_profile'],
+                    auth('administrator')->user()?->permissions ?? []
+                ))),
                 Action::make("Print_DTR")
                     ->label("Print DTR")
                     ->icon("heroicon-o-printer")
@@ -558,6 +592,7 @@ class ExternalListsTable
                         ->label("Upload User to Device")
                         ->icon("heroicon-o-user-plus")
                         ->color("success")
+                        ->visible(fn() => auth('administrator')->user()?->hasPermission('register_device') ?? false)
                         ->modalWidth("md")
                         ->schema([
 

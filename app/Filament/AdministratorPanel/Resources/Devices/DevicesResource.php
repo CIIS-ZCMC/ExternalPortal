@@ -34,10 +34,7 @@ class DevicesResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth('administrator')->user();
-        if ($user && $user->role === 1) {
-            return true;
-        }
-        return false;
+        return $user && ($user->isSuperAdmin() || $user->hasPermission('manage_devices'));
     }
 
     public static function form(Schema $schema): Schema

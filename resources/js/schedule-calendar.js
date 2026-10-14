@@ -35,6 +35,27 @@ window.initEmployeeScheduleCalendar = function (config) {
     const employeeId = config.employeeId;
     const canEdit = config.canEdit !== undefined ? config.canEdit : true;
 
+    // Load dynamic shift presets from configuration or scrape from external palette in DOM
+    let shiftPresets = Array.isArray(config.shiftPresets) ? [...config.shiftPresets] : [];
+    if (shiftPresets.length === 0 && config.externalPaletteId) {
+        const paletteContainer = document.getElementById(config.externalPaletteId);
+        if (paletteContainer) {
+            paletteContainer.querySelectorAll('.fc-shift-item').forEach((item, idx) => {
+                shiftPresets.push({
+                    id: idx + 1,
+                    name: item.getAttribute('data-title') || 'Preset ' + (idx + 1),
+                    first_in: item.getAttribute('data-first-in') || '08:00:00',
+                    first_out: item.getAttribute('data-first-out') || null,
+                    second_in: item.getAttribute('data-second-in') || null,
+                    second_out: item.getAttribute('data-second-out') || '16:00:00',
+                    is_shifting: item.getAttribute('data-shifting') === '1',
+                    color: item.getAttribute('data-color') || '#0ea5e9',
+                    border_color: item.getAttribute('data-border') || '#0284c7',
+                });
+            });
+        }
+    }
+
     // Toast alert helper using SweetAlert2
     const Toast = Swal.mixin({
         toast: true,
@@ -140,6 +161,19 @@ window.initEmployeeScheduleCalendar = function (config) {
         const minutes = String(date.getMinutes()).padStart(2, '0');
         const seconds = String(date.getSeconds()).padStart(2, '0');
         return `${hours}:${minutes}:${seconds}`;
+    }
+
+    // Helper to convert "HH:mm[:ss]" to "h:mm A"
+    function formatTimeStr(timeStr) {
+        if (!timeStr) return '';
+        const parts = timeStr.split(':');
+        let h = parseInt(parts[0], 10);
+        const m = parts[1] || '00';
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12;
+        if (h === 0) h = 12;
+        const hStr = h < 10 ? '0' + h : String(h);
+        return `${hStr}:${m} ${ampm}`;
     }
 
     // Drop from external shift presets
@@ -249,7 +283,8 @@ window.initEmployeeScheduleCalendar = function (config) {
         droppable: canEdit,
         selectable: canEdit,
         selectMirror: true,
-        dayMaxEvents: 3,
+        dayMaxEvents: 6,
+        eventOrder: 'first_in,start,title',
         nowIndicator: true,
         eventDisplay: 'block',
         eventDurationEditable: canEdit,
@@ -257,6 +292,21 @@ window.initEmployeeScheduleCalendar = function (config) {
         eventResizableFromStart: true,
         snapDuration: '00:15:00',
         slotDuration: '00:30:00',
+        eventContent: function (arg) {
+            const event = arg.event;
+            const ext = event.extendedProps || {};
+            const title = (event.title || '').trim();
+
+            const container = document.createElement('div');
+            container.className = 'fc-event-custom-content flex items-center justify-center w-full overflow-hidden text-xs font-semibold px-1 py-0.5';
+
+            const titleSpan = document.createElement('span');
+            titleSpan.className = 'fc-event-custom-title truncate';
+            titleSpan.textContent = title;
+            container.appendChild(titleSpan);
+
+            return { domNodes: [container] };
+        },
 
         eventDragStart: function () {
             isDraggingItem = true;
@@ -340,14 +390,19 @@ window.initEmployeeScheduleCalendar = function (config) {
                 },
                 body: JSON.stringify(payload),
             })
-            .then(res => res.json())
-            .then(res => {
-                if (res.success) {
+            .then(async r => {
+                const res = await r.json().catch(() => ({}));
+                if (r.ok && res.success) {
                     Toast.fire({ icon: 'success', title: 'Shift plotted for ' + dtrDate });
                     calendar.refetchEvents();
                 } else {
                     info.revert();
-                    Toast.fire({ icon: 'error', title: res.error || 'Failed to save schedule.' });
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Schedule Conflict',
+                        text: res.error || res.message || 'Cannot plot schedule: Conflict with existing shift.',
+                        confirmButtonColor: '#2563eb',
+                    });
                 }
             })
             .catch(err => {
@@ -362,14 +417,32 @@ window.initEmployeeScheduleCalendar = function (config) {
             if (!canEdit) return;
 
             const event = info.event;
-            const scheduleId = event.extendedProps.schedule_id || event.id;
+            const ext = event.extendedProps || {};
+            const scheduleId = ext.schedule_id || event.id;
+            const scheduleIds = ext.schedule_ids || [scheduleId];
             const startDate = event.start;
-            const endDate = event.end || new Date(startDate.getTime() + 8 * 3600 * 1000);
+            const endDate = event.end;
 
-            // Format date YYYY-MM-DD locally to prevent UTC date shift
+            // Format destination start date YYYY-MM-DD locally to prevent UTC date shift
             const dtrDate = formatLocalDate(startDate);
-            const firstIn = formatLocalTime(startDate);
-            const secondOut = formatLocalTime(endDate);
+
+            // Shift times preserved from extendedProps (prevent 00:00:00 midnight wipe in dayGridMonth)
+            const firstIn = ext.first_in || '08:00:00';
+            const secondOut = ext.second_out || '16:00:00';
+
+            // Calculate inclusive destination end date if the event is a multi-day span
+            let endDateStr = null;
+            if (endDate) {
+                const endCalDate = new Date(endDate.getTime());
+                // In FullCalendar dayGrid, endDate is exclusive midnight of next day
+                if (endCalDate.getHours() === 0 && endCalDate.getMinutes() === 0) {
+                    endCalDate.setDate(endCalDate.getDate() - 1);
+                }
+                const formattedInclusiveEnd = formatLocalDate(endCalDate);
+                if (formattedInclusiveEnd > dtrDate) {
+                    endDateStr = formattedInclusiveEnd;
+                }
+            }
 
             fetch(config.updateDropResizeUrl, {
                 method: 'POST',
@@ -381,26 +454,36 @@ window.initEmployeeScheduleCalendar = function (config) {
                 },
                 body: JSON.stringify({
                     id: scheduleId,
+                    schedule_ids: scheduleIds,
                     employee_id: employeeId,
                     dtr_date: dtrDate,
+                    end_date: endDateStr,
                     first_in: firstIn,
                     second_out: secondOut,
                 }),
             })
-            .then(res => res.json())
-            .then(res => {
-                if (res.success) {
-                    Toast.fire({ icon: 'success', title: 'Schedule moved to ' + dtrDate });
+            .then(async r => {
+                const res = await r.json().catch(() => ({}));
+                if (r.ok && res.success) {
+                    const msg = endDateStr 
+                        ? `Schedule moved to ${dtrDate} - ${endDateStr}.`
+                        : `Schedule moved to ${dtrDate}.`;
+                    Toast.fire({ icon: 'success', title: msg });
                     calendar.refetchEvents();
                 } else {
                     info.revert();
-                    Toast.fire({ icon: 'error', title: res.error || 'Update failed.' });
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Schedule Conflict',
+                        text: res.error || res.message || 'Cannot move schedule: Conflict with existing shift.',
+                        confirmButtonColor: '#2563eb',
+                    });
                 }
             })
             .catch(err => {
                 console.error(err);
                 info.revert();
-                Toast.fire({ icon: 'error', title: 'Network error.' });
+                Toast.fire({ icon: 'error', title: 'Network error while moving schedule.' });
             });
         },
 
@@ -443,6 +526,7 @@ window.initEmployeeScheduleCalendar = function (config) {
                 },
                 body: JSON.stringify({
                     id: scheduleId,
+                    schedule_ids: ext.schedule_ids || [scheduleId],
                     employee_id: employeeId,
                     dtr_date: dtrDate,
                     end_date: endDateStr,
@@ -450,9 +534,9 @@ window.initEmployeeScheduleCalendar = function (config) {
                     second_out: secondOut,
                 }),
             })
-            .then(res => res.json())
-            .then(res => {
-                if (res.success) {
+            .then(async r => {
+                const res = await r.json().catch(() => ({}));
+                if (r.ok && res.success) {
                     const msg = endDateStr 
                         ? `Shift extended from ${dtrDate} to ${endDateStr}.`
                         : `Shift duration updated for ${dtrDate}.`;
@@ -460,7 +544,12 @@ window.initEmployeeScheduleCalendar = function (config) {
                     calendar.refetchEvents();
                 } else {
                     info.revert();
-                    Toast.fire({ icon: 'error', title: res.error || 'Resize failed.' });
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Schedule Conflict',
+                        text: res.error || res.message || 'Cannot resize schedule: Conflict with existing shift.',
+                        confirmButtonColor: '#2563eb',
+                    });
                 }
             })
             .catch(err => {
@@ -678,8 +767,25 @@ window.initEmployeeScheduleCalendar = function (config) {
                         }
                     });
                 } else if (result.isDenied) {
+                    const dateInputVal = document.getElementById('swal-date')?.value;
+                    const targetDate = dateInputVal || capturedTargetDate || clickedDateStr || startDateStr;
+
+                    // If single day shift, remove event optimistically for instant visual feedback
+                    if (!isMultiDay) {
+                        try {
+                            info.event.remove();
+                        } catch (e) {
+                            console.warn('Could not remove event optimistically:', e);
+                        }
+                    }
+
                     // Check if deleting the entire span or just single target date
                     if (capturedDeleteScope === 'all_span') {
+                        // Optimistically remove multi-day event if whole span is deleted
+                        try {
+                            info.event.remove();
+                        } catch (e) {}
+
                         // Clear all days in this span
                         const clearUrl = config.clearAllUrl || (config.storeUrl.replace('/store', '/clear-all'));
                         fetch(clearUrl, {
@@ -703,15 +809,16 @@ window.initEmployeeScheduleCalendar = function (config) {
                                 calendar.refetchEvents();
                             } else {
                                 Toast.fire({ icon: 'error', title: res.error || 'Delete failed.' });
+                                calendar.refetchEvents();
                             }
                         })
                         .catch(err => {
                             console.error(err);
                             Toast.fire({ icon: 'error', title: 'Failed to delete schedule span.' });
+                            calendar.refetchEvents();
                         });
                     } else {
-                        // Delete specific target date (creates clean cut in continuous bar)
-                        const targetDate = capturedTargetDate || clickedDateStr;
+                        // Delete specific target date (creates clean cut in continuous bar or removes 24h/single day)
                         const safeScheduleId = scheduleId || 0;
                         const deleteUrl = config.destroyUrl.replace(':id', safeScheduleId) + '?employee_id=' + employeeId + '&dtr_date=' + targetDate;
                         
@@ -726,15 +833,17 @@ window.initEmployeeScheduleCalendar = function (config) {
                         .then(r => r.json())
                         .then(res => {
                             if (res.success) {
-                                Toast.fire({ icon: 'success', title: `Schedule on ${targetDate} deleted (cut created).` });
+                                Toast.fire({ icon: 'success', title: `Schedule on ${targetDate} deleted.` });
                                 calendar.refetchEvents();
                             } else {
                                 Toast.fire({ icon: 'error', title: res.error || 'Delete failed.' });
+                                calendar.refetchEvents();
                             }
                         })
                         .catch(err => {
                             console.error(err);
                             Toast.fire({ icon: 'error', title: 'Failed to delete schedule.' });
+                            calendar.refetchEvents();
                         });
                     }
                 }
@@ -756,6 +865,32 @@ window.initEmployeeScheduleCalendar = function (config) {
                 ? `Plot Shift from ${startDate} to ${endDate}` 
                 : `Plot Shift on ${startDate}`;
 
+            let presetOptionsHtml = '';
+            if (shiftPresets.length > 0) {
+                presetOptionsHtml = shiftPresets.map((p, idx) => {
+                    const inStr = formatTimeStr(p.first_in);
+                    const outStr = formatTimeStr(p.second_out);
+                    const hoursStr = p.total_hours ? ` [${p.total_hours}h]` : '';
+                    const timeRange = `${inStr} - ${outStr}`;
+                    const label = (p.name && !p.name.includes(timeRange))
+                        ? `${p.name} (${timeRange})${hoursStr}`
+                        : `${p.name || timeRange}${hoursStr}`;
+                    return `<option value="${idx}" ${idx === 0 ? 'selected' : ''}>${label}</option>`;
+                }).join('');
+            } else {
+                presetOptionsHtml = `
+                    <option value="22:00:00|06:00:00|1" selected>Night Shift (10:00 PM - 06:00 AM)</option>
+                    <option value="06:00:00|14:00:00|1">Morning Shift (06:00 AM - 02:00 PM)</option>
+                    <option value="14:00:00|22:00:00|1">Afternoon Shift (02:00 PM - 10:00 PM)</option>
+                    <option value="08:00:00|17:00:00|0">Regular Office Hours (08:00 AM - 05:00 PM)</option>
+                    <option value="08:00:00|16:00:00|1">Day Shift (08:00 AM - 04:00 PM)</option>
+                `;
+            }
+            presetOptionsHtml += `<option value="custom">Custom Hours...</option>`;
+
+            const initialFirstIn = (shiftPresets[0]?.first_in || '08:00:00').substring(0, 5);
+            const initialSecondOut = (shiftPresets[0]?.second_out || '16:00:00').substring(0, 5);
+
             Swal.fire({
                 title: promptTitle,
                 html: `
@@ -763,31 +898,45 @@ window.initEmployeeScheduleCalendar = function (config) {
                         <div style="display:flex; flex-direction:column; gap:6px;">
                             <label style="font-weight:600;">Shift Preset</label>
                             <select id="swal-quick-shift" class="swal2-select" style="width:100%; margin:0;">
-                                <option value="22:00:00|06:00:00|1" selected>Night Shift (10:00 PM - 06:00 AM)</option>
-                                <option value="06:00:00|14:00:00|1">Morning Shift (06:00 AM - 02:00 PM)</option>
-                                <option value="14:00:00|22:00:00|1">Afternoon Shift (02:00 PM - 10:00 PM)</option>
-                                <option value="08:00:00|17:00:00|0">Regular Office Hours (08:00 AM - 05:00 PM)</option>
-                                <option value="08:00:00|16:00:00|1">Day Shift (08:00 AM - 04:00 PM)</option>
-                                <option value="custom">Custom Hours...</option>
+                                ${presetOptionsHtml}
                             </select>
                         </div>
                         <div id="swal-custom-times" style="display:none; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
                             <div>
                                 <label style="display:block; font-weight:600; margin-bottom:4px;">Time In</label>
-                                <input id="swal-new-in" type="time" value="22:00" class="swal2-input" style="width:100%; margin:0;">
+                                <input id="swal-new-in" type="time" value="${initialFirstIn}" class="swal2-input" style="width:100%; margin:0;">
                             </div>
                             <div>
                                 <label style="display:block; font-weight:600; margin-bottom:4px;">Time Out</label>
-                                <input id="swal-new-out" type="time" value="06:00" class="swal2-input" style="width:100%; margin:0;">
+                                <input id="swal-new-out" type="time" value="${initialSecondOut}" class="swal2-input" style="width:100%; margin:0;">
                             </div>
+                        </div>
+                        <div style="margin-top:12px; padding:8px 10px; background-color:#f8fafc; border:1px solid #e2e8f0; border-radius:6px;">
+                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem; color:#334155;">
+                                <input id="swal-replace-existing" type="checkbox" checked style="width:16px; height:16px; accent-color:#2563eb;">
+                                <span><strong>Replace existing shift(s)</strong> on selected date(s)</span>
+                            </label>
                         </div>
                     </div>
                 `,
                 didOpen: () => {
                     const sel = document.getElementById('swal-quick-shift');
                     const customDiv = document.getElementById('swal-custom-times');
+                    const inInput = document.getElementById('swal-new-in');
+                    const outInput = document.getElementById('swal-new-out');
+
                     sel.addEventListener('change', () => {
-                        customDiv.style.display = sel.value === 'custom' ? 'grid' : 'none';
+                        const val = sel.value;
+                        if (val === 'custom') {
+                            customDiv.style.display = 'grid';
+                        } else {
+                            customDiv.style.display = 'none';
+                            if (shiftPresets[val]) {
+                                const p = shiftPresets[val];
+                                inInput.value = (p.first_in || '08:00:00').substring(0, 5);
+                                outInput.value = (p.second_out || '16:00:00').substring(0, 5);
+                            }
+                        }
                     });
                 },
                 showCancelButton: true,
@@ -797,8 +946,11 @@ window.initEmployeeScheduleCalendar = function (config) {
                 cancelButtonColor: '#64748b',
                 preConfirm: () => {
                     const sel = document.getElementById('swal-quick-shift').value;
-                    let firstIn = '22:00:00';
-                    let secondOut = '06:00:00';
+                    const replaceExisting = document.getElementById('swal-replace-existing')?.checked ?? true;
+                    let firstIn = '08:00:00';
+                    let secondOut = '16:00:00';
+                    let firstOut = null;
+                    let secondIn = null;
                     let isShifting = 1;
 
                     if (sel === 'custom') {
@@ -808,14 +960,23 @@ window.initEmployeeScheduleCalendar = function (config) {
                             Swal.showValidationMessage('Please provide both Time In and Time Out');
                             return false;
                         }
-                        firstIn = inVal + ':00';
-                        secondOut = outVal + ':00';
+                        firstIn = inVal.length === 5 ? inVal + ':00' : inVal;
+                        secondOut = outVal.length === 5 ? outVal + ':00' : outVal;
                         isShifting = 1;
+                    } else if (shiftPresets[sel]) {
+                        const p = shiftPresets[sel];
+                        firstIn = p.first_in || '08:00:00';
+                        secondOut = p.second_out || '16:00:00';
+                        firstOut = p.first_out || null;
+                        secondIn = p.second_in || null;
+                        isShifting = p.is_shifting ? 1 : 0;
                     } else {
                         const parts = sel.split('|');
-                        firstIn = parts[0];
-                        secondOut = parts[1];
-                        isShifting = parseInt(parts[2], 10);
+                        firstIn = parts[0] || '08:00:00';
+                        secondOut = parts[1] || '16:00:00';
+                        isShifting = parseInt(parts[2] ?? '1', 10);
+                        firstOut = isShifting ? null : '12:00:00';
+                        secondIn = isShifting ? null : '13:00:00';
                     }
 
                     return {
@@ -825,8 +986,9 @@ window.initEmployeeScheduleCalendar = function (config) {
                         is_shifting: isShifting,
                         first_in: firstIn,
                         second_out: secondOut,
-                        first_out: isShifting ? null : '12:00:00',
-                        second_in: isShifting ? null : '13:00:00',
+                        first_out: firstOut,
+                        second_in: secondIn,
+                        replace_existing: replaceExisting ? 1 : 0,
                     };
                 }
             }).then((result) => {
@@ -842,14 +1004,31 @@ window.initEmployeeScheduleCalendar = function (config) {
                         },
                         body: JSON.stringify(result.value),
                     })
-                    .then(r => r.json())
-                    .then(res => {
-                        if (res.success) {
-                            Toast.fire({ icon: 'success', title: isMultiDay ? `Shifts plotted from ${startDate} to ${endDate}` : `Shift plotted for ${startDate}` });
+                    .then(async r => {
+                        const res = await r.json().catch(() => ({}));
+                        if (r.ok && res.success) {
+                            Toast.fire({
+                                icon: 'success',
+                                title: isMultiDay ? `Shifts plotted from ${startDate} to ${endDate}` : `Shift plotted for ${startDate}`
+                            });
                             calendar.refetchEvents();
                         } else {
-                            Toast.fire({ icon: 'error', title: res.error || 'Failed to plot shift.' });
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Could Not Plot Shift',
+                                text: res.error || res.message || 'Failed to plot shift.',
+                                confirmButtonColor: '#2563eb',
+                            });
                         }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Network Error',
+                            text: 'Failed to communicate with server.',
+                            confirmButtonColor: '#ef4444',
+                        });
                     });
                 }
             });

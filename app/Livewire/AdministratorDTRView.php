@@ -394,23 +394,45 @@ class AdministratorDTRView extends TableWidget
                             Select::make('time_shift')
                                 ->label('Time Shift')
                                 ->disabled(fn($get) => !$get('is_shifting'))
-                                ->options([
-                                    '1' => '10:00 AM - 06:00 PM',
-                                    '2' => '02:00 PM - 10:00 PM',
-                                    '3' => '10:00 PM - 06:00 AM',
-                                    '4' => '06:00 AM - 02:00 PM',
-                                    '5' => '08:00 AM - 04:00 PM',
-                                    '6' => '08:00 AM - 08:00 AM',
-                                    '7' => '08:00 AM - 12:00 PM',
-                                    '8' => '01:00 PM - 05:00 PM',
-                                    '9' => '07:00 AM - 07:00 AM',
-                                    '10' => '03:00 PM - 07:00 AM',
-                                    '11' => '06:00 AM - 10:00 PM',
-                                ])
+                                ->options(function () {
+                                    try {
+                                        $presets = \App\Models\ShiftPreset::active()->get();
+                                        if ($presets->isNotEmpty()) {
+                                            return $presets->pluck('name', 'id')->toArray();
+                                        }
+                                    } catch (\Throwable $e) {}
+
+                                    return [
+                                        '1' => '10:00 AM - 06:00 PM',
+                                        '2' => '02:00 PM - 10:00 PM',
+                                        '3' => '10:00 PM - 06:00 AM',
+                                        '4' => '06:00 AM - 02:00 PM',
+                                        '5' => '08:00 AM - 04:00 PM',
+                                        '6' => '08:00 AM - 08:00 AM',
+                                        '7' => '08:00 AM - 12:00 PM',
+                                        '8' => '01:00 PM - 05:00 PM',
+                                        '9' => '07:00 AM - 07:00 AM',
+                                        '10' => '03:00 PM - 07:00 AM',
+                                        '11' => '06:00 AM - 10:00 PM',
+                                    ];
+                                })
                                 ->live()
                                 ->afterStateUpdated(function ($set, $get) {
                                     if ($get('time_shift')) {
                                         $shift = $get('time_shift');
+
+                                        // Try dynamic ShiftPreset model first
+                                        try {
+                                            $preset = \App\Models\ShiftPreset::find($shift);
+                                            if ($preset) {
+                                                $set('first_in', $preset->first_in);
+                                                $set('first_out', $preset->first_out);
+                                                $set('second_in', $preset->second_in);
+                                                $set('second_out', $preset->second_out);
+                                                return;
+                                            }
+                                        } catch (\Throwable $e) {}
+
                                         $shiftMap = [
                                             '1' => ['10:00:00', '18:00:00'],
                                             '2' => ['14:00:00', '22:00:00'],

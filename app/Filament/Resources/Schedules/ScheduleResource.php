@@ -21,7 +21,7 @@ class ScheduleResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;
 
-    protected static ?string $navigationLabel = "My Schedules";
+    protected static ?string $navigationLabel = "Schedule Lists";
 
     protected static ?string $modelLabel = "Duty Schedule";
 
@@ -29,7 +29,7 @@ class ScheduleResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'dtr_date';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     //protected static bool $shouldRegisterNavigation = false;
 

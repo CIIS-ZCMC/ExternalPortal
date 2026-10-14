@@ -25,10 +25,12 @@ class Administrator extends AuthenticatableUser implements FilamentUser
         'username',
         'role',
         'assigned_agencies',
+        'permissions',
     ];
 
     protected $casts = [
         'assigned_agencies' => 'array',
+        'permissions' => 'array',
     ];
 
     protected $hidden = [
@@ -42,4 +44,26 @@ class Administrator extends AuthenticatableUser implements FilamentUser
             $this->attributes['password'] = Hash::make($value);
         }
     }
+
+    /**
+     * Check if administrator is a super administrator
+     */
+    public function isSuperAdmin(): bool
+    {
+        return (int) $this->role === 1;
+    }
+
+    /**
+     * Check if administrator has a specific permission
+     */
+    public function hasPermission(string $permission): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        $permissions = $this->permissions ?? [];
+        return in_array($permission, $permissions);
+    }
+
 }

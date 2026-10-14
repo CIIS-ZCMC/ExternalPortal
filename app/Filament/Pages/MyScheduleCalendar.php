@@ -11,13 +11,13 @@ class MyScheduleCalendar extends Page
 {
     protected string $view = 'filament.pages.my-schedule-calendar';
 
-    protected static ?string $navigationLabel = 'My Calendar View';
+    protected static ?string $navigationLabel = 'My Calendar Schedules';
 
     protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendar;
 
     protected static ?string $title = 'My Schedule Calendar';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 2;
 
     public ?ExternalEmployees $employee = null;
 

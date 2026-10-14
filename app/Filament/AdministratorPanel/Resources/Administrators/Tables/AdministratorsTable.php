@@ -55,6 +55,40 @@ class AdministratorsTable
                     })
                     ->wrap(),
 
+                TextColumn::make('permissions')
+                    ->label('Assigned Permissions')
+                    ->badge()
+                    ->color(fn($record) => (int)$record->role === 1 ? 'success' : 'info')
+                    ->formatStateUsing(function ($state, $record) {
+                        if ((int) $record->role === 1) {
+                            return 'All Permissions (Super Admin)';
+                        }
+
+                        $permissions = $state;
+                        if (is_string($permissions)) {
+                            $permissions = json_decode($permissions, true);
+                        }
+
+                        if (empty($permissions) || !is_array($permissions)) {
+                            return 'None (View Only)';
+                        }
+
+                        $labels = [
+                            'time_adjustments'     => 'Time Adjustments',
+                            'deactivate'           => 'Deactivate',
+                            'reset_password'       => 'Reset Password',
+                            'update_email'         => 'Update Email',
+                            'edit_profile'         => 'Edit Profile',
+                            'register_device'      => 'Upload to Device',
+                            'manage_devices'       => 'Devices',
+                            'manage_shift_presets' => 'Shift Presets',
+                        ];
+
+                        $named = array_map(fn($p) => $labels[$p] ?? $p, $permissions);
+                        return $named;
+                    })
+                    ->wrap(),
+
                 TextColumn::make('created_at')
                     ->label('Account Created')
                     ->date('M d, Y')
