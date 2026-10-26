@@ -33,13 +33,27 @@ class GoogleController extends Controller
             $user->update(['email_verified_at' => \Carbon\Carbon::now()]);
         }
 
-        Auth::guard('external')->login($user);
-        session()->put("userToken_", [
+        $googleProfile = [
             'email' => $googleUser->getEmail(),
             'name' => $googleUser->getName(),
             'avatar' => $googleUser->getAvatar(),
             'id' => $googleUser->getId()
-        ]);
+        ];
+
+        // Check if 2FA is active
+        if ($user->is_2fa_enabled) {
+            session([
+                'auth.2fa.user_id' => $user->id,
+                'auth.2fa.guard' => 'external',
+                'auth.2fa.remember' => true,
+                'auth.2fa.google_token' => $googleProfile,
+            ]);
+
+            return redirect()->route('2fa.challenge');
+        }
+
+        Auth::guard('external')->login($user);
+        session()->put("userToken_", $googleProfile);
         return redirect('/portal');
     }
 

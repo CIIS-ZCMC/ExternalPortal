@@ -163,23 +163,46 @@ class AuthController extends Controller
     {
         $credentials = $request->only('username', 'password');
 
-        if (Auth::guard("external")->attempt($credentials)) {
-            $user = Auth::guard("external")->user();
+        if (Auth::guard("external")->validate($credentials)) {
+            $user = ExternalEmployees::where('username', $credentials['username'])->first();
 
-            if (is_null($user->email_verified_at)) {
-                Auth::guard("external")->logout();
-                if ($request->hasSession()) {
-                    $request->session()->invalidate();
-                    $request->session()->regenerateToken();
-                }
-
+            if ($user && is_null($user->email_verified_at)) {
                 return redirect()->route("portal.login")->with("error", "Your email address has not been verified yet. Please check your email to verify your account before logging in.");
             }
+
+            // Check if Google Authenticator 2FA is active
+            if ($user && $user->is_2fa_enabled) {
+                session([
+                    'auth.2fa.user_id' => $user->id,
+                    'auth.2fa.guard' => 'external',
+                    'auth.2fa.remember' => $request->boolean('remember'),
+                ]);
+
+                return redirect()->route('2fa.challenge');
+            }
+
+            Auth::guard("external")->login($user, $request->boolean('remember'));
+            $request->session()->regenerate();
 
             return redirect('/portal');
         }
 
-        if (Auth::guard("administrator")->attempt($credentials)) {
+        if (Auth::guard("administrator")->validate($credentials)) {
+            $admin = \App\Models\Administrator::where('username', $credentials['username'])->first();
+
+            if ($admin && ($admin->is_2fa_enabled ?? false)) {
+                session([
+                    'auth.2fa.user_id' => $admin->id,
+                    'auth.2fa.guard' => 'administrator',
+                    'auth.2fa.remember' => $request->boolean('remember'),
+                ]);
+
+                return redirect()->route('2fa.challenge');
+            }
+
+            Auth::guard("administrator")->login($admin, $request->boolean('remember'));
+            $request->session()->regenerate();
+
             return redirect("/administratorPanel");
         }
 

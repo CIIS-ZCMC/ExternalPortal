@@ -34,10 +34,14 @@ class ExternalEmployees extends Authenticatable implements FilamentUser
         'position',
         'status',
         'biometric_id',
+        'is_2fa_enabled',
+        'two_factor_confirmed_at',
     ];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'is_2fa_enabled' => 'boolean',
+        'two_factor_confirmed_at' => 'datetime',
     ];
 
     protected $hidden = ['password', 'remember_token'];

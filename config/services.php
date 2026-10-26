@@ -49,4 +49,9 @@ return [
         'from_name' => env('SYSTEM_EMAIL_FROM_NAME', 'ZCMC Portal'),
     ],
 
+    'gauth' => [
+        'base_url' => env('GAUTH_BASE_URL', 'http://127.0.0.1:8001'),
+        'api_key' => env('GAUTH_API_KEY'),
+    ],
+
 ];

@@ -26,11 +26,15 @@ class Administrator extends AuthenticatableUser implements FilamentUser
         'role',
         'assigned_agencies',
         'permissions',
+        'is_2fa_enabled',
+        'two_factor_confirmed_at',
     ];
 
     protected $casts = [
         'assigned_agencies' => 'array',
         'permissions' => 'array',
+        'is_2fa_enabled' => 'boolean',
+        'two_factor_confirmed_at' => 'datetime',
     ];
 
     protected $hidden = [

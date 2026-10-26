@@ -1239,5 +1239,514 @@
         border-color: rgba(217, 119, 6, 0.3) !important;
         color: #fcd34d !important;
     }
+
+    /* --------------------------------------------------------------------------
+       Google Authenticator (2FA) Scratch CSS Component
+       -------------------------------------------------------------------------- */
+    .gauth-section-wrapper {
+        margin-top: 2.25rem !important;
+        padding-top: 1.75rem !important;
+        border-top: 1px solid #e2e8f0 !important;
+    }
+    .dark .gauth-section-wrapper {
+        border-top-color: #1f2937 !important;
+    }
+
+    .gauth-card {
+        background-color: #ffffff !important;
+        border-radius: 0.875rem !important;
+        padding: 1.5rem !important;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+        border: 1px solid #e2e8f0 !important;
+        box-sizing: border-box !important;
+    }
+    .dark .gauth-card {
+        background-color: #111827 !important;
+        border-color: #1f2937 !important;
+    }
+
+    .gauth-card-body {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 1.25rem !important;
+    }
+    @media (min-width: 640px) {
+        .gauth-card-body {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+        }
+    }
+
+    .gauth-info-group {
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 1rem !important;
+    }
+
+    .gauth-icon-box {
+        width: 3rem !important;
+        height: 3rem !important;
+        min-width: 3rem !important;
+        min-height: 3rem !important;
+        border-radius: 1rem !important;
+        background: #ecfdf5 !important;
+        color: #059669 !important;
+        border: 1px solid rgba(16, 185, 129, 0.25) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+    }
+    .gauth-icon-box svg {
+        width: 1.75rem !important;
+        height: 1.75rem !important;
+    }
+    .dark .gauth-icon-box {
+        background: rgba(6, 78, 59, 0.5) !important;
+        color: #34d399 !important;
+        border-color: rgba(52, 211, 153, 0.3) !important;
+    }
+
+    .gauth-badge {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.375rem !important;
+        padding: 0.2rem 0.65rem !important;
+        border-radius: 9999px !important;
+        font-size: 0.6875rem !important;
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+    }
+
+    .gauth-badge-active {
+        background-color: #ecfdf5 !important;
+        color: #047857 !important;
+        border: 1px solid #a7f3d0 !important;
+    }
+    .dark .gauth-badge-active {
+        background-color: rgba(6, 78, 59, 0.6) !important;
+        color: #6ee7b7 !important;
+        border-color: rgba(5, 150, 105, 0.35) !important;
+    }
+
+    .gauth-badge-disabled {
+        background-color: #fffbeb !important;
+        color: #b45309 !important;
+        border: 1px solid #fde68a !important;
+    }
+    .dark .gauth-badge-disabled {
+        background-color: rgba(120, 53, 15, 0.4) !important;
+        color: #fcd34d !important;
+        border-color: rgba(217, 119, 6, 0.35) !important;
+    }
+
+    .gauth-pulse-dot {
+        width: 0.45rem !important;
+        height: 0.45rem !important;
+        border-radius: 50% !important;
+        background-color: #10b981 !important;
+        animation: gauth-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+    }
+    @keyframes gauth-pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .gauth-title {
+        font-size: 0.9375rem !important;
+        font-weight: 700 !important;
+        color: #0f172a !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+        flex-wrap: wrap !important;
+        margin: 0 !important;
+    }
+    .dark .gauth-title {
+        color: #f8fafc !important;
+    }
+
+    .gauth-description {
+        font-size: 0.75rem !important;
+        color: #64748b !important;
+        margin: 0.35rem 0 0 0 !important;
+        line-height: 1.45 !important;
+        max-width: 36rem !important;
+    }
+    .dark .gauth-description {
+        color: #94a3b8 !important;
+    }
+
+    .gauth-timestamp {
+        font-size: 0.6875rem !important;
+        color: #94a3b8 !important;
+        margin: 0.35rem 0 0 0 !important;
+    }
+    .dark .gauth-timestamp {
+        color: #64748b !important;
+    }
+
+    .gauth-btn {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0.45rem !important;
+        padding: 0.625rem 1.15rem !important;
+        font-size: 0.75rem !important;
+        font-weight: 700 !important;
+        border-radius: 0.75rem !important;
+        cursor: pointer !important;
+        transition: all 0.15s ease !important;
+        border: 1px solid transparent !important;
+        user-select: none !important;
+        white-space: nowrap !important;
+        text-decoration: none !important;
+        box-sizing: border-box !important;
+    }
+    .gauth-btn svg {
+        width: 1rem !important;
+        height: 1rem !important;
+    }
+    .gauth-btn:hover {
+        transform: translateY(-1px) !important;
+    }
+    .gauth-btn:active {
+        transform: translateY(0) !important;
+    }
+
+    .gauth-btn-primary {
+        background-color: #059669 !important;
+        color: #ffffff !important;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+    }
+    .gauth-btn-primary:hover {
+        background-color: #047857 !important;
+    }
+
+    .gauth-btn-danger {
+        background-color: #fff1f2 !important;
+        color: #be123c !important;
+        border-color: #fecdd3 !important;
+    }
+    .gauth-btn-danger:hover {
+        background-color: #ffe4e6 !important;
+    }
+    .dark .gauth-btn-danger {
+        background-color: rgba(136, 19, 55, 0.3) !important;
+        color: #fda4af !important;
+        border-color: rgba(225, 29, 72, 0.4) !important;
+    }
+
+    /* Modal Overlay & Dialog */
+    .gauth-modal-overlay {
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 99999 !important;
+        background-color: rgba(15, 23, 42, 0.65) !important;
+        backdrop-filter: blur(6px) !important;
+        -webkit-backdrop-filter: blur(6px) !important;
+        display: none;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 1rem !important;
+        box-sizing: border-box !important;
+    }
+    .gauth-modal-overlay.is-active {
+        display: flex !important;
+    }
+
+    .gauth-modal-dialog {
+        background-color: #ffffff !important;
+        border-radius: 1.5rem !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35) !important;
+        border: 1px solid #e2e8f0 !important;
+        width: 100% !important;
+        max-width: 28rem !important;
+        overflow: hidden !important;
+        position: relative !important;
+        animation: gauth-scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        box-sizing: border-box !important;
+    }
+    .dark .gauth-modal-dialog {
+        background-color: #111827 !important;
+        border-color: #1f2937 !important;
+    }
+
+    @keyframes gauth-scale-in {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    .gauth-modal-header {
+        background: linear-gradient(135deg, #047857 0%, #059669 50%, #0d9488 100%) !important;
+        padding: 1.15rem 1.5rem !important;
+        color: #ffffff !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+    }
+
+    .gauth-modal-title {
+        font-size: 0.875rem !important;
+        font-weight: 700 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+        letter-spacing: -0.01em !important;
+        color: #ffffff !important;
+        margin: 0 !important;
+    }
+    .gauth-modal-title svg {
+        width: 1.25rem !important;
+        height: 1.25rem !important;
+    }
+
+    .gauth-close-btn {
+        background: none !important;
+        border: none !important;
+        color: rgba(255, 255, 255, 0.85) !important;
+        font-size: 1.5rem !important;
+        line-height: 1 !important;
+        cursor: pointer !important;
+        padding: 0.25rem !important;
+        border-radius: 0.5rem !important;
+        transition: color 0.15s ease !important;
+    }
+    .gauth-close-btn:hover {
+        color: #ffffff !important;
+    }
+
+    .gauth-modal-body {
+        padding: 1.5rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 1.15rem !important;
+        max-height: 80vh !important;
+        overflow-y: auto !important;
+        box-sizing: border-box !important;
+    }
+
+    .gauth-loading {
+        padding: 2.5rem 1.5rem !important;
+        text-align: center !important;
+        font-size: 0.75rem !important;
+        color: #64748b !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 0.875rem !important;
+    }
+
+    .gauth-spinner {
+        width: 2rem !important;
+        height: 2rem !important;
+        border: 3px solid #e2e8f0 !important;
+        border-top-color: #059669 !important;
+        border-radius: 50% !important;
+        animation: gauth-spin 0.7s linear infinite !important;
+    }
+    @keyframes gauth-spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .gauth-qr-frame {
+        display: inline-block !important;
+        padding: 0.75rem !important;
+        background-color: #ffffff !important;
+        border-radius: 1rem !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+        margin-top: 0.5rem !important;
+    }
+    .gauth-qr-image {
+        width: 11rem !important;
+        height: 11rem !important;
+        margin: 0 auto !important;
+        display: block !important;
+        object-fit: contain !important;
+    }
+
+    .gauth-link-btn {
+        background: none !important;
+        border: none !important;
+        color: #059669 !important;
+        font-size: 0.6875rem !important;
+        font-weight: 600 !important;
+        text-decoration: underline !important;
+        cursor: pointer !important;
+        padding: 0 !important;
+    }
+    .gauth-link-btn:hover {
+        color: #047857 !important;
+    }
+    .dark .gauth-link-btn {
+        color: #34d399 !important;
+    }
+
+    .gauth-manual-key-box {
+        margin-top: 0.5rem !important;
+        padding: 0.625rem !important;
+        background-color: #f1f5f9 !important;
+        border-radius: 0.625rem !important;
+        font-family: monospace !important;
+        font-size: 0.75rem !important;
+        color: #334155 !important;
+        word-break: break-all !important;
+        border: 1px solid #e2e8f0 !important;
+        user-select: all !important;
+        text-align: center !important;
+    }
+    .dark .gauth-manual-key-box {
+        background-color: #1e293b !important;
+        color: #e2e8f0 !important;
+        border-color: #334155 !important;
+    }
+
+    /* Recovery codes box */
+    .gauth-recovery-box {
+        background-color: #fffbeb !important;
+        border: 1px solid #fde68a !important;
+        border-radius: 0.875rem !important;
+        padding: 0.875rem !important;
+        text-align: left !important;
+        box-sizing: border-box !important;
+    }
+    .dark .gauth-recovery-box {
+        background-color: rgba(120, 53, 15, 0.3) !important;
+        border-color: rgba(217, 119, 6, 0.4) !important;
+    }
+
+    .gauth-recovery-header {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+    }
+    .gauth-recovery-title {
+        font-size: 0.75rem !important;
+        font-weight: 700 !important;
+        color: #78350f !important;
+    }
+    .dark .gauth-recovery-title {
+        color: #fef3c7 !important;
+    }
+
+    .gauth-recovery-copy {
+        background: none !important;
+        border: none !important;
+        font-size: 0.6875rem !important;
+        color: #b45309 !important;
+        text-decoration: underline !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        padding: 0 !important;
+    }
+    .dark .gauth-recovery-copy {
+        color: #fde68a !important;
+    }
+
+    .gauth-recovery-desc {
+        font-size: 0.6875rem !important;
+        color: #92400e !important;
+        margin: 0.35rem 0 0 0 !important;
+        line-height: 1.4 !important;
+    }
+    .dark .gauth-recovery-desc {
+        color: #fde68a !important;
+    }
+
+    .gauth-recovery-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 0.35rem !important;
+        margin-top: 0.625rem !important;
+    }
+
+    .gauth-recovery-item {
+        background-color: #ffffff !important;
+        padding: 0.35rem !important;
+        text-align: center !important;
+        border-radius: 0.5rem !important;
+        border: 1px solid #fde68a !important;
+        font-family: monospace !important;
+        font-size: 0.6875rem !important;
+        font-weight: 700 !important;
+        color: #475569 !important;
+        user-select: all !important;
+    }
+    .dark .gauth-recovery-item {
+        background-color: #1e293b !important;
+        border-color: rgba(217, 119, 6, 0.4) !important;
+        color: #e2e8f0 !important;
+    }
+
+    /* 6-digit confirmation form & input */
+    .gauth-activate-form {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+        padding-top: 0.75rem !important;
+        border-top: 1px solid #f1f5f9 !important;
+    }
+    .dark .gauth-activate-form {
+        border-top-color: #1f2937 !important;
+    }
+
+    .gauth-label {
+        display: block !important;
+        font-size: 0.75rem !important;
+        font-weight: 700 !important;
+        color: #334155 !important;
+        text-align: center !important;
+        margin: 0 !important;
+    }
+    .dark .gauth-label {
+        color: #e2e8f0 !important;
+    }
+
+    .gauth-code-input {
+        width: 100% !important;
+        text-align: center !important;
+        letter-spacing: 0.35em !important;
+        font-family: monospace !important;
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        padding: 0.625rem 0.75rem !important;
+        border: 2px solid #cbd5e1 !important;
+        border-radius: 0.75rem !important;
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+        outline: none !important;
+        transition: all 0.15s ease !important;
+        box-sizing: border-box !important;
+    }
+    .gauth-code-input:focus {
+        border-color: #059669 !important;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+    }
+    .dark .gauth-code-input {
+        background-color: #1e293b !important;
+        border-color: #475569 !important;
+        color: #f8fafc !important;
+    }
+    .dark .gauth-code-input:focus {
+        border-color: #10b981 !important;
+    }
+
+    .gauth-alert-error {
+        font-size: 0.75rem !important;
+        color: #e11d48 !important;
+        background-color: #fff1f2 !important;
+        border: 1px solid #fecdd3 !important;
+        padding: 0.625rem !important;
+        border-radius: 0.625rem !important;
+        text-align: center !important;
+        font-weight: 600 !important;
+    }
+    .dark .gauth-alert-error {
+        background-color: rgba(136, 19, 55, 0.3) !important;
+        border-color: rgba(225, 29, 72, 0.4) !important;
+        color: #fda4af !important;
+    }
 </style>
 

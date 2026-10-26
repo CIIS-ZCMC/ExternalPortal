@@ -14,5 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn () => route('portal.login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+            if ($request->is('two-factor-challenge') || $request->is('settings/2fa/*') || $request->is('login')) {
+                return redirect()->route('portal.login')->with('error', 'Your session expired. Please enter your credentials to sign in again.');
+            }
+        });
     })->create();

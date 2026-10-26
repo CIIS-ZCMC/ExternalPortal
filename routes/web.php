@@ -7,6 +7,8 @@ use Illuminate\Support\Str;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MailController;
 use App\Http\Controllers\GoogleController;
+use App\Http\Controllers\Auth\TwoFactorLoginController;
+use App\Http\Controllers\Settings\TwoFactorSettingsController;
 
 Route::get('/', function () {
     return redirect()->route('portal.login');
@@ -40,6 +42,19 @@ Route::get('/successful', [AuthController::class, 'successful'])->name('portal.s
 
 Route::get("/admin/login", [AuthController::class, 'adminLogin'])->name('admin.login');
 Route::post("/admin/signin", [AuthController::class, 'AdminSignin'])->name('admin.signin');
+
+// Two-Factor Authentication Challenge (Login Step 2)
+Route::get('/two-factor-challenge', [TwoFactorLoginController::class, 'showChallenge'])->name('2fa.challenge');
+Route::post('/two-factor-challenge', [TwoFactorLoginController::class, 'verifyChallenge'])->name('2fa.verify');
+
+// Two-Factor Authentication Settings (Enrollment & Management)
+Route::prefix('settings/2fa')->name('settings.2fa.')->group(function () {
+    Route::post('/enroll', [TwoFactorSettingsController::class, 'enroll'])->name('enroll');
+    Route::post('/activate', [TwoFactorSettingsController::class, 'activate'])->name('activate');
+    Route::post('/disable', [TwoFactorSettingsController::class, 'disable'])->name('disable');
+    Route::get('/status', [TwoFactorSettingsController::class, 'status'])->name('status');
+});
+
 
 Route::controller(GoogleController::class)->group(function () {
     Route::get("/auth/google", "redirectToGoogle")->name("auth.google");

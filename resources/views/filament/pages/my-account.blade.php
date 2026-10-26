@@ -7,5 +7,10 @@
                 Save Profile Changes
             </x-filament::button>
         </div>
+
+        {{-- Google Authenticator (TOTP 2FA) Setup & Management --}}
+        <div class="gauth-section-wrapper" style="margin-top: 2.25rem; padding-top: 1.75rem; border-top: 1px solid #e2e8f0;">
+            @include('settings.two-factor-setup')
+        </div>
     </div>
 </x-filament-panels::page>
