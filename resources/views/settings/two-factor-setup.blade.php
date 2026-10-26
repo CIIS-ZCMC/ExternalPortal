@@ -88,7 +88,7 @@
             </div>
 
             <!-- Modal Content -->
-            <div id="modal-content" class="gauth-modal-body" style="display: none;">
+            <div id="modal-content" class="gauth-modal-body is-hidden" style="display: none;">
                 <div style="text-align: center;">
                     <p style="font-size: 0.75rem; color: #475569; margin: 0;">
                         Scan this QR code with <strong>Google Authenticator</strong> or any TOTP app:
@@ -163,9 +163,11 @@
         const codeInput = document.getElementById('activation-code');
 
         modal.classList.add('is-active');
-        loading.style.display = 'flex';
-        content.style.display = 'none';
-        errBox.style.display = 'none';
+        loading.style.setProperty('display', 'flex', 'important');
+        loading.classList.remove('is-hidden');
+        content.style.setProperty('display', 'none', 'important');
+        content.classList.add('is-hidden');
+        errBox.style.setProperty('display', 'none', 'important');
         codeInput.value = '';
 
         try {
@@ -199,8 +201,10 @@
                 grid.appendChild(item);
             });
 
-            loading.style.display = 'none';
-            content.style.display = 'flex';
+            loading.style.setProperty('display', 'none', 'important');
+            loading.classList.add('is-hidden');
+            content.style.setProperty('display', 'flex', 'important');
+            content.classList.remove('is-hidden');
             setTimeout(() => {
                 codeInput.focus();
             }, 100);
@@ -250,13 +254,13 @@
                 window.location.href = window.location.pathname;
             } else {
                 errBox.innerText = result.message || 'Invalid code entered. Check your phone time and try again.';
-                errBox.style.display = 'block';
+                errBox.style.setProperty('display', 'block', 'important');
                 btn.disabled = false;
                 btn.querySelector('span').innerText = 'Confirm & Activate 2FA';
             }
         } catch (err) {
             errBox.innerText = 'Network error while validating activation code.';
-            errBox.style.display = 'block';
+            errBox.style.setProperty('display', 'block', 'important');
             btn.disabled = false;
             btn.querySelector('span').innerText = 'Confirm & Activate 2FA';
         }

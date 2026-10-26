@@ -1532,10 +1532,21 @@
         text-align: center !important;
         font-size: 0.75rem !important;
         color: #64748b !important;
-        display: flex !important;
+        display: flex;
         flex-direction: column !important;
         align-items: center !important;
         gap: 0.875rem !important;
+    }
+    .gauth-loading.is-hidden,
+    .gauth-loading[style*="display: none"],
+    .gauth-loading[hidden] {
+        display: none !important;
+    }
+
+    .gauth-modal-body.is-hidden,
+    .gauth-modal-body[style*="display: none"],
+    .gauth-modal-body[hidden] {
+        display: none !important;
     }
 
     .gauth-spinner {
