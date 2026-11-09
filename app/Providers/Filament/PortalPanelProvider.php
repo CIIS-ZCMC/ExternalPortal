@@ -3,7 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\DTR;
-use Filament\Http\Middleware\Authenticate;
+use App\Http\Middleware\PortalAuthenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -30,8 +30,6 @@ class PortalPanelProvider extends PanelProvider
             ->default()
             ->id('portal')
             ->path('portal')
-            ->login(fn() => redirect()->route('portal.login'))
-
             ->colors([
                 'primary' => Color::Emerald,
                 'gray' => Color::Slate,
@@ -69,7 +67,7 @@ class PortalPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
-                Authenticate::class,
+                PortalAuthenticate::class,
                 EnsureEmailIsVerified::class,
             ]);
     }

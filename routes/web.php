@@ -17,6 +17,7 @@ Route::get('/', function () {
 Route::get('/portal/dtr', fn() => redirect('/portal/d-t-r'));
 
 Route::get("/portal/login", [AuthController::class, 'loginPage'])->name('portal.login');
+Route::get("/portal/auth/login", fn () => redirect()->route('portal.login'))->name('filament.portal.auth.login');
 
 Route::get("/portal/register", [AuthController::class, 'registerPage'])->name('portal.register');
 Route::get("login", fn() => redirect()->route('portal.login'))->name('login');
