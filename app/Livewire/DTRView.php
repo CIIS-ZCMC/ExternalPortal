@@ -78,9 +78,14 @@ class DTRView extends TableWidget
         unset($this->dtrRecords); // bust the computed cache on filter change
     }
 
+    protected function getAuthenticatedUser()
+    {
+        return Auth::guard('external')->user() ?? Auth::user();
+    }
+
     public function refreshDtr()
     {
-        $biometric_id = Auth::user()?->biometric_id;
+        $biometric_id = $this->getAuthenticatedUser()?->biometric_id;
 
         if (!$biometric_id) {
             Notification::make()
@@ -155,7 +160,7 @@ class DTRView extends TableWidget
             ->send();
 
         // Invalidate cached records so the freshly saved schedule is reflected
-        $biometric_id = Auth::user()?->biometric_id;
+        $biometric_id = $this->getAuthenticatedUser()?->biometric_id;
         if ($biometric_id) {
             CacheFacade::forget("dtr_records_{$biometric_id}_{$this->year}_{$this->month}");
         }
@@ -172,7 +177,7 @@ class DTRView extends TableWidget
     #[Computed]
     public function getDtrRecords()
     {
-        $biometric_id = Auth::user()?->biometric_id;
+        $biometric_id = $this->getAuthenticatedUser()?->biometric_id;
 
         if (!$biometric_id) {
             return collect([]);
@@ -342,7 +347,7 @@ class DTRView extends TableWidget
                         $token = Str::random(16);
 
                         CacheFacade::put('dtr_download_' . $token, [
-                            'biometric_id' => Auth::user()->biometric_id,
+                            'biometric_id' => $this->getAuthenticatedUser()?->biometric_id,
                             'year' => $this->year,
                             'month' => $this->month,
                         ], now()->addMinutes(5));
