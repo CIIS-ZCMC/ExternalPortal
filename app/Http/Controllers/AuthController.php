@@ -215,10 +215,6 @@ class AuthController extends Controller
 
         $latest = ExternalEmployees::withTrashed()
             ->where('biometric_id', '>=', $startBiometric)
-            ->whereNotIn('biometric_id', function ($query) {
-                $query->select('biometric_id')
-                    ->from('employee_profiles');
-            })
             ->orderBy('biometric_id', 'desc')
             ->value('biometric_id');
 
