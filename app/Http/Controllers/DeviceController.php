@@ -12,11 +12,18 @@ class DeviceController extends Controller
 {
     public static function Connect($device)
     {
+        if (!$device) {
+            return false;
+        }
+
         try {
+            ini_set('default_socket_timeout', '10');
+
             $options = [
                 'ip' => (string)$device['ip_address'],
                 'com_key' => (int)$device['com_key'],
                 'description' => 'TAD1',
+                'connection_timeout' => 3,
                 'soap_port' => (int)$device['soap_port'],
                 'udp_port' => (int)$device['udp_port'],
                 'encoding' => 'utf-8'
@@ -24,12 +31,11 @@ class DeviceController extends Controller
             $tad_factory = new TADFactory($options);
             $tad = $tad_factory->get_instance();
             if ($tad->is_alive()) {
-                $getsnmc = json_decode(self::getSNMAC($tad)->getContent(), true);
                 return $tad;
             }
+
+            return false;
         } catch (\Throwable $th) {
-
-
             return false;
         }
     }

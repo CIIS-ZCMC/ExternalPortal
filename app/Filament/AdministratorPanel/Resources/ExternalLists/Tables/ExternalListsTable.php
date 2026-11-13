@@ -708,6 +708,7 @@ class ExternalListsTable
 
                         ])
                         ->action(function ($records, array $data) {
+                            set_time_limit(300);
 
                             $deviceID = $data['device_id'];
                             $device = Devices::where("is_active", 1)
@@ -736,7 +737,7 @@ class ExternalListsTable
                                     ]);
 
                                    
-                                    if ($info !== "No data!") {
+                                    if ($utemp !== false && isset($utemp->Row) && $info !== "No data!") {
                                         $BIO_User = [];
                                         foreach ($utemp->Row as $user_Cred) {
                                             $result = [
@@ -777,6 +778,12 @@ class ExternalListsTable
                                     ->send();
 
                                 self::UploadBiometricDataToLive($records);
+                            } else {
+                                Notification::make()
+                                    ->title('Failed to connect to device')
+                                    ->body($device ? "Could not reach {$device->device_name} ({$device->ip_address})." : 'Selected device is inactive or not found.')
+                                    ->danger()
+                                    ->send();
                             }
                         }),
                 ]),
@@ -786,100 +793,111 @@ class ExternalListsTable
 
     public static function UploadBiometricDataToLive($records)
     {
+        set_time_limit(300);
 
-        $devices = Devices::where("is_registration", 0)
+        $devices = Devices::where("is_active", 1)
+            ->where("is_registration", 0)
             ->where("for_attendance", 0)
             ->where("is_hrbliz",0)
             ->get();
 
 
         foreach ($devices as $device) {
-            $tad = DeviceController::Connect($device);
-            if ($tad) {
-                foreach ($records as $record) {
-                    $biometric_id = $record->biometric_id;
+            try {
+                $tad = DeviceController::Connect($device);
+                if ($tad) {
+                    foreach ($records as $record) {
+                        $biometric_id = $record->biometric_id;
 
 
-                    $biometricRecord =   Biometrics::firstOrCreate([
-                        'biometric_id' => $biometric_id,
-                    ], [
-                        'name' => $record->name,
-                        'privilege' => 0,
-                        'biometric' => "NOT_YET_REGISTERED",
-                        'name_with_biometric' => "External_" . $record->name
-                    ]);
+                        $biometricRecord =   Biometrics::firstOrCreate([
+                            'biometric_id' => $biometric_id,
+                        ], [
+                            'name' => $record->name,
+                            'privilege' => 0,
+                            'biometric' => "NOT_YET_REGISTERED",
+                            'name_with_biometric' => "External_" . $record->name
+                        ]);
 
-                    if($biometricRecord->biometric == "NOT_YET_REGISTERED"){
-                        Notification::make()
-                        ->title("Biometric ID : {$biometric_id} skipped")
-                        ->body('No biometric data found for this entry.')
-                        ->danger()
-                        ->send();
-                        continue;
-                    }
-
-                    $user_temp = $tad->get_user_template(['pin' => $biometric_id]);
-                    $utemp = simplexml_load_string($user_temp);
-
-                    $info = $utemp !== false && isset($utemp->Row->Information)
-                        ? trim((string) $utemp->Row->Information)
-                        : null;
-
-                    $BIO_User = [];
-                    if ($info !== "No data!") {
-                        foreach ($utemp->Row as $user_Cred) {
-                            $result = [
-                                'Finger_ID' => (string) $user_Cred->FingerID,
-                                'Size'  => (string) $user_Cred->Size,
-                                'Valid' => (string) $user_Cred->Valid,
-                                'Template' => (string) $user_Cred->Template,
-                            ];
-                            $BIO_User[] = $result;
+                        if($biometricRecord->biometric == "NOT_YET_REGISTERED"){
+                            Notification::make()
+                            ->title("Biometric ID : {$biometric_id} skipped")
+                            ->body('No biometric data found for this entry.')
+                            ->danger()
+                            ->send();
+                            continue;
                         }
-                    }
 
+                        $user_temp = $tad->get_user_template(['pin' => $biometric_id]);
+                        $utemp = simplexml_load_string($user_temp);
 
-                    $added =  $tad->set_user_info([
-                        'pin' => $biometric_id,
-                        'name' => $record->name,
-                        'privilege' => 0
-                    ]);
-                    $biometric_Data = $BIO_User;
-                    if (isset($biometricRecord->biometric)) {
-                        $biometric_Data = json_decode($biometricRecord->biometric, true);
-                        if (!empty($BIO_User)) {
-                            $merged = array_merge($biometric_Data ?? [], $BIO_User);
-                            $biometric_Data = collect(array_values(array_reduce($merged, function ($carry, $item) {
-                                $carry[$item['Finger_ID']] = $item;
-                                return $carry;
-                            }, [])));
-                        }
-                        $biometric_Data = json_decode(json_encode($biometric_Data));
-                    }
+                        $info = $utemp !== false && isset($utemp->Row->Information)
+                            ? trim((string) $utemp->Row->Information)
+                            : null;
 
-                    if ($added) {
-                        if ($biometric_Data !== null) {
-                            foreach ($biometric_Data as $row) {
-                                $fingerid = $row->Finger_ID;
-                                $size = $row->Size;
-                                $valid = $row->Valid;
-                                $template = $row->Template;
-                                $tad->set_user_template([
-                                    'pin' => $biometric_id,
-                                    'finger_id' => $fingerid,
-                                    'size' => $size,
-                                    'valid' => $valid,
-                                    'template' => $template
-                                ]);
+                        $BIO_User = [];
+                        if ($utemp !== false && isset($utemp->Row) && $info !== "No data!") {
+                            foreach ($utemp->Row as $user_Cred) {
+                                $result = [
+                                    'Finger_ID' => (string) $user_Cred->FingerID,
+                                    'Size'  => (string) $user_Cred->Size,
+                                    'Valid' => (string) $user_Cred->Valid,
+                                    'Template' => (string) $user_Cred->Template,
+                                ];
+                                $BIO_User[] = $result;
                             }
                         }
-                    }
 
-                    Notification::make()
-                        ->title('User ' . $biometric_id . ' ' . $record->name . ' added successfully to ' . $device->device_name)
-                        ->success()
-                        ->send();
+
+                        $added =  $tad->set_user_info([
+                            'pin' => $biometric_id,
+                            'name' => $record->name,
+                            'privilege' => 0
+                        ]);
+                        $biometric_Data = $BIO_User;
+                        if (isset($biometricRecord->biometric)) {
+                            $biometric_Data = json_decode($biometricRecord->biometric, true);
+                            if (!empty($BIO_User)) {
+                                $merged = array_merge($biometric_Data ?? [], $BIO_User);
+                                $biometric_Data = collect(array_values(array_reduce($merged, function ($carry, $item) {
+                                    $carry[$item['Finger_ID']] = $item;
+                                    return $carry;
+                                }, [])));
+                            }
+                            $biometric_Data = json_decode(json_encode($biometric_Data));
+                        }
+
+                        if ($added) {
+                            if ($biometric_Data !== null) {
+                                foreach ($biometric_Data as $row) {
+                                    $fingerid = $row->Finger_ID;
+                                    $size = $row->Size;
+                                    $valid = $row->Valid;
+                                    $template = $row->Template;
+                                    $tad->set_user_template([
+                                        'pin' => $biometric_id,
+                                        'finger_id' => $fingerid,
+                                        'size' => $size,
+                                        'valid' => $valid,
+                                        'template' => $template
+                                    ]);
+                                }
+                            }
+                        }
+
+                        Notification::make()
+                            ->title('User ' . $biometric_id . ' ' . $record->name . ' added successfully to ' . $device->device_name)
+                            ->success()
+                            ->send();
+                    }
                 }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error("Biometric sync failed for device {$device->device_name} ({$device->ip_address}): " . $e->getMessage());
+                Notification::make()
+                    ->title("Sync failed for {$device->device_name}")
+                    ->body($e->getMessage())
+                    ->warning()
+                    ->send();
             }
         }
     }
